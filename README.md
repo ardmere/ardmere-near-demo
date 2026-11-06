@@ -30,6 +30,29 @@ Open this folder as the workspace root in Cursor; the agent can use it when you 
 skills/por-risk-control/scripts/por-check.sh vendor/ardmere.github.io/docs/reports/okx/508756245-assessment.json
 ```
 
+## Who publishes a snapshot to NEAR
+
+Three separate roles. Nothing here writes to mainnet.
+
+| Role | Command | Key |
+| --- | --- | --- |
+| Detect upstream drift | `python3 scripts/upstream_check.py` | none |
+| Anchor what is missing on testnet | `python3 scripts/near_digest.py --contract <c.testnet> reconcile --apply` | owner |
+| Read a score | `POR_NEAR_CONTRACT=<c.testnet> skills/por-risk-control/scripts/por-check.sh <file>` | none |
+
+`scripts/upstream_check.py` only reads the submodule and the manifest. `scripts/near_digest.py` is idempotent: a snapshot already on chain with the same bytes is skipped, and different bytes fail instead of overwriting. Neither is a timer that re-sends transactions; the trigger is a manifest change, not a clock.
+
+Two workflows wire this up:
+
+- `.github/workflows/upstream-check.yml` runs nightly, advances the submodule in the CI checkout, and opens `cursor/upstream-sync` when a listed assessment changed. No secrets.
+- `.github/workflows/anchor-testnet.yml` runs on `main` when the manifest or the submodule pointer moves, and anchors only what testnet is missing. It needs `vars.NEAR_CONTRACT_ID` and `secrets.NEAR_TESTNET_OWNER_KEY`, writes the key to a temporary keychain, and deletes it afterwards.
+
+Merging the sync PR is a human decision about which snapshots this demo vouches for, and it is what triggers anchoring. The demo therefore becomes the publisher of the NEAR records it serves; the upstream repo stays the source of the assessments and the Sepolia anchor.
+
+## Reading live versus sandbox
+
+`fixtures/near-views.json` is a sandbox recording. With `POR_NEAR_CONTRACT` unset, the skill reads that file; the `near.live` field is `false`. Set `POR_NEAR_CONTRACT` to a testnet account and the `get` comes from the chain with `near.live` `true`. Quote which one produced a number before quoting the number.
+
 ## Tracks
 
 - `thesis` (primary). `THESIS.md` states the claim, the evidence for it, the evidence against it, and the result that would drop it. The page is the re-runnable evidence.

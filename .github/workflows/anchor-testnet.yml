@@ -1,0 +1,84 @@
+name: anchor-testnet
+
+# Anchors snapshots that the manifest lists but the testnet contract does not hold yet.
+# Idempotent: same bytes are skipped, different bytes fail. Never runs against mainnet
+# and never runs for pull requests.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "fixtures/digests.json"
+      - "vendor/ardmere.github.io"
+      - "scripts/near_digest.py"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: anchor-testnet
+  cancel-in-progress: false
+
+jobs:
+  reconcile:
+    runs-on: ubuntu-latest
+    env:
+      NEAR_CONTRACT_ID: ${{ vars.NEAR_CONTRACT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Require a testnet contract account
+        run: |
+          if [ -z "${NEAR_CONTRACT_ID}" ]; then
+            echo "set the repository variable NEAR_CONTRACT_ID to the testnet contract account" >&2
+            exit 1
+          fi
+          case "${NEAR_CONTRACT_ID}" in
+            *.testnet) ;;
+            *) echo "NEAR_CONTRACT_ID must be a .testnet account; got ${NEAR_CONTRACT_ID}" >&2; exit 1 ;;
+          esac
+
+      - name: Install near-cli-rs
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y pkg-config libssl-dev libudev-dev
+          cargo install near-cli-rs --locked
+
+      - name: Read the digest with a view call only
+        run: python3 scripts/near_digest.py --network testnet --contract "${NEAR_CONTRACT_ID}" reconcile
+
+      - name: Write the owner key to a temporary keychain
+        env:
+          NEAR_OWNER_KEY: ${{ secrets.NEAR_TESTNET_OWNER_KEY }}
+        run: |
+          if [ -z "${NEAR_OWNER_KEY}" ]; then
+            echo "set the repository secret NEAR_TESTNET_OWNER_KEY to the contract owner private key" >&2
+            exit 1
+          fi
+          case "${NEAR_OWNER_KEY}" in
+            ed25519:*) ;;
+            *) echo "NEAR_TESTNET_OWNER_KEY must be an ed25519: private key" >&2; exit 1 ;;
+          esac
+          export KEYCHAIN="$(mktemp -d)"
+          echo "KEYCHAIN=${KEYCHAIN}" >> "$GITHUB_ENV"
+          umask 077
+          mkdir -p "${KEYCHAIN}/.near-credentials/testnet"
+          printf '{"account_id":"%s","public_key":"ed25519:%s","private_key":"%s"}\n' \
+            "${NEAR_CONTRACT_ID}" "${NEAR_OWNER_KEY#ed25519:}" "${NEAR_OWNER_KEY}" \
+            > "${KEYCHAIN}/.near-credentials/testnet/${NEAR_CONTRACT_ID}.json"
+
+      - name: Reconcile the manifest with testnet
+        run: |
+          HOME="${KEYCHAIN}" XDG_CONFIG_HOME="${KEYCHAIN}/.config" \
+            python3 scripts/near_digest.py --network testnet --contract "${NEAR_CONTRACT_ID}" reconcile --apply
+
+      - name: Shred the key
+        if: always()
+        run: |
+          if [ -n "${KEYCHAIN:-}" ] && [ -d "${KEYCHAIN}" ]; then
+            find "${KEYCHAIN}" -type f -exec shred -u {} + 2>/dev/null || true
+            rm -rf "${KEYCHAIN}"
+          fi

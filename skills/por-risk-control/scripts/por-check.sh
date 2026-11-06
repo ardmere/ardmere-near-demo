@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-# Hash one assessment file, compare fixtures/digests.json and an optional NEAR get, print a risk score.
+# Hash one assessment file, compare fixtures/digests.json and a NEAR get, print a risk score.
+# The NEAR view comes from a live testnet contract when POR_NEAR_CONTRACT is set, otherwise
+# from the sandbox recording in fixtures/near-views.json.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../../.." && pwd)"
@@ -7,13 +9,25 @@ export POR_ROOT="$ROOT"
 if [[ -z "${POR_DIGESTS+x}" ]]; then
   export POR_DIGESTS="$ROOT/fixtures/digests.json"
 fi
-if [[ -z "${POR_NEAR_VIEWS+x}" ]]; then
-  export POR_NEAR_VIEWS="$ROOT/fixtures/near-views.json"
-fi
 
 if [[ $# -ne 1 ]]; then
   echo "usage: por-check.sh <assessment.json>" >&2
+  echo "  POR_NEAR_CONTRACT=<account.testnet> reads the get view from that testnet contract" >&2
+  echo "  otherwise the sandbox recording in fixtures/near-views.json is used" >&2
   exit 2
+fi
+
+LIVE_VIEW=""
+if [[ -n "${POR_NEAR_CONTRACT-}" ]]; then
+  LIVE_VIEW="$(mktemp "${TMPDIR:-/tmp}/por-near-views-XXXXXX.json")"
+  trap 'rm -f "$LIVE_VIEW"' EXIT
+  python3 "$ROOT/scripts/near_digest.py" \
+    --network "${POR_NEAR_NETWORK:-testnet}" \
+    --contract "$POR_NEAR_CONTRACT" \
+    get "$1" >"$LIVE_VIEW"
+  export POR_NEAR_VIEWS="$LIVE_VIEW"
+elif [[ -z "${POR_NEAR_VIEWS+x}" ]]; then
+  export POR_NEAR_VIEWS="$ROOT/fixtures/near-views.json"
 fi
 
 exec python3 - "$1" <<'PY'
@@ -212,6 +226,9 @@ def score(assessment_path):
     near_present = isinstance(view, dict)
     near_obj = {
         "network": near_doc.get("network") if isinstance(near_doc, dict) else None,
+        "source": near_doc.get("source") if isinstance(near_doc, dict) else None,
+        "live": near_doc.get("live") if isinstance(near_doc, dict) else None,
+        "contract": near_doc.get("contract") if isinstance(near_doc, dict) else None,
         "matches": None,
         "assessmentSha256": near_sha,
     }
@@ -265,7 +282,21 @@ def score(assessment_path):
     if near_path and Path(near_path).exists() and not near_readable:
         return integrity(
             "NEAR_GET_MISMATCH",
-            "fixtures/near-views.json is unreadable.",
+            "NEAR view document is unreadable.",
+            exchange,
+            snapshot,
+            stage,
+            effective,
+            flags,
+            file_sha,
+            digests_sha,
+            near_obj,
+        )
+    live_source = isinstance(near_doc, dict) and near_doc.get("live") is True
+    if live_source and not near_present:
+        return integrity(
+            "NEAR_GET_MISSING",
+            near_doc.get("note") or "The live NEAR contract has no get record for this snapshot.",
             exchange,
             snapshot,
             stage,

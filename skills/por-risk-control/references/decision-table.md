@@ -25,8 +25,9 @@ If the assessment file is missing, `fixtures/digests.json` cannot be read, the f
 | `DIGESTS_UNREADABLE` | `fixtures/digests.json` is missing or is not the expected JSON |
 | `DIGEST_MISMATCH` | The file sha256 differs from the `digests.json` row, or the row is missing |
 | `NEAR_GET_MISMATCH` | A `get` view for this exchange and snapshot is present and the hash differs |
+| `NEAR_GET_MISSING` | The view came from a live contract (`near.live` is `true`) and that contract holds no record for this snapshot |
 
-A missing NEAR view is not a mismatch. The view is optional. Comparison is on the 32-byte hex, case-insensitive, `0x` ignored.
+A missing NEAR view from the sandbox recording is not a mismatch. The recording is optional, so its silence says nothing about the chain. `NEAR_GET_MISSING` applies only to a live `get` that answered "not found": the snapshot is not anchored yet. Comparison is on the 32-byte hex, case-insensitive, `0x` ignored.
 
 ## Blocking flags
 
