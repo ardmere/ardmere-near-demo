@@ -18,6 +18,18 @@ git submodule update --init --recursive
 
 To move the submodule to a newer upstream commit, update the checkout under `vendor/ardmere.github.io`, refresh `fixtures/digests.json` paths and sha256 entries, then commit both the submodule pointer and this repo.
 
+## Cursor: `por-risk-control` skill
+
+This repo ships a symlink so Cursor can discover the skill in place:
+
+- `.cursor/skills/por-risk-control` → `skills/por-risk-control` (same `SKILL.md` and `scripts/` as the CLI)
+
+Open this folder as the workspace root in Cursor; the agent can use it when you ask for a custody risk score from a public assessment file. The runnable check remains:
+
+```bash
+skills/por-risk-control/scripts/por-check.sh vendor/ardmere.github.io/docs/reports/okx/508756245-assessment.json
+```
+
 ## Tracks
 
 - `thesis` (primary). `THESIS.md` states the claim, the evidence for it, the evidence against it, and the result that would drop it. The page is the re-runnable evidence.
