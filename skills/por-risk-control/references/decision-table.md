@@ -40,6 +40,23 @@ These ids are the public framework's high flags that block a stage. Each occurre
 | `SAMPLE_ONLY` | 40 |
 | `BLACK_BOX_INCLUSION_PROOF` | 40 |
 
+`BLACK_BOX_INCLUSION_PROOF` and `LOGIN_WALL` describe the exchange's artifact, not the user's own file. Verifying a user's inclusion proof locally does not remove either flag: the flag says the public cannot check the tree, and one user's private proof does not change that. Report a pass as "your leaf was in the published tree", never as "this flag is resolved".
+
+## User inclusion proof
+
+`scripts/inclusion_check.py` is separate from the score. It verifies one user's proof and never adds or removes `factors`. A failing proof does not raise `riskScore`; it means the proof the user holds is not consistent with the root it names.
+
+| Verdict | Meaning |
+| --- | --- |
+| `PASS` | the leaf and path recompute to the root the proof names |
+| `FAIL` | they do not; the file is inconsistent, altered, or for another snapshot |
+
+`binding.matches` compares the recomputed root with the assessment's `snapshot.exchangeMerkleRoot`. `null` means nothing was bound: either the assessment publishes no root, or the published root has a different width than the scheme produces.
+
+`ROOT_WIDTH_MISMATCH` marks the second case. Bitget currently publishes a 256-bit root while its user proofs produce 64-bit roots, so those two cannot be compared. Do not turn that into a claim about the user's proof.
+
+`TRUNCATED_HASH` marks schemes that keep fewer than 256 bits: Bitget 64, MEXC 128. Treat those passes as weak evidence, in the same way the upstream verifier notes do.
+
 ## Stage below effective PoR
 
 If the hash matches and `porStage` is `Stage 0` or `Pre-Stage` (the exact value, or that value followed by a space, hyphen, or em dash), add one factor:

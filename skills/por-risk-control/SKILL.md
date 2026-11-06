@@ -48,3 +48,41 @@ python3 scripts/near_digest.py --contract <contract.testnet> reconcile --apply  
 ```
 
 The reconciliation is idempotent: bytes already on chain are skipped, different bytes fail instead of overwriting. `scripts/upstream_check.py` reports drift between the submodule and the manifest and never touches NEAR.
+
+## Verifying the user's own inclusion proof
+
+A custody score describes an exchange. It says nothing about whether *this* user's balance was in the snapshot. That is what the user's own proof is for, and it is verified locally:
+
+```bash
+skills/por-risk-control/scripts/inclusion_check.py --list-schemes
+skills/por-risk-control/scripts/inclusion_check.py \
+  --exchange bybit \
+  --assessment vendor/ardmere.github.io/docs/reports/bybit/2026102706-assessment.json \
+  ~/Downloads/myProof.json
+```
+
+The proof is the file the exchange hands a logged-in user. It contains the account id, nonce and balances, so:
+
+- Read it from the user's own machine. Never ask them to paste it into chat, commit it, or upload it anywhere.
+- The script prints verdicts only and never echoes the account id, nonce or balances.
+- Nothing is written next to the proof; the script has no output file.
+
+Supported schemes are `bitget`, `bingx`, `mexc` and `bybit`, ported from `vendor/ardmere.github.io/internal/exchanges/*/merkle` and tested against the same fixtures (see `tests/test_inclusion.py`).
+
+Output shape:
+
+| Field | Meaning |
+| --- | --- |
+| `verdict` | `PASS` or `FAIL` |
+| `recomputedRoot` | the root the proof's own path produces |
+| `findings[]` | `SELF_HASH_MISMATCH`, `PATH_MISMATCH`, `BALANCE_MISMATCH`, `HEIGHT_MISMATCH`, `TRUNCATED_HASH`, `ROOT_NOT_BOUND` |
+| `binding` | whether `recomputedRoot` equals the merkle root the assessment publishes |
+| `scope` | what a pass does and does not mean |
+
+`binding.matches` is `null` when the assessment publishes no exchange merkle root. Do not report `null` as a match, and do not treat a `PASS` with `matches: null` as proof of anything beyond the user's own leaf. Today only Bitget's assessment carries a published root, so the other three can be verified but not bound to a snapshot.
+
+`TRUNCATED_HASH` matters when quoting a result: Bitget keeps 64 bits and MEXC 128 bits of SHA-256, so their passes are weaker than Bybit's or BingX's full-width ones.
+
+`ROOT_WIDTH_MISMATCH` means the assessment publishes a root of a different width than the scheme produces, so the two cannot be compared at all. Today that is true for Bitget: the assessment's `exchangeMerkleRoot` is 256 bits while its user proofs produce 64-bit roots. The upstream Go verifier compares them as strings and therefore reports a mismatch; this script reports the width problem instead of blaming the user's proof. Treat such a binding as unknown, not as a failure of the user's file.
+
+A pass proves the user's leaf is in the tree that produced the root. It does not prove the exchange holds enough reserves for everyone, and it does not change the custody score.

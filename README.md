@@ -30,6 +30,32 @@ Open this folder as the workspace root in Cursor; the agent can use it when you 
 skills/por-risk-control/scripts/por-check.sh vendor/ardmere.github.io/docs/reports/okx/508756245-assessment.json
 ```
 
+## Checking your own inclusion proof
+
+`por-check.sh` scores an exchange. It cannot tell you whether *your* balance was in the snapshot. For that, the skill verifies the proof file your exchange gives you, locally:
+
+```bash
+skills/por-risk-control/scripts/inclusion_check.py --list-schemes
+skills/por-risk-control/scripts/inclusion_check.py --exchange bybit ~/Downloads/myProof.json
+# bind it to what the assessment published, when a root is published:
+skills/por-risk-control/scripts/inclusion_check.py --exchange bitget \
+  --assessment vendor/ardmere.github.io/docs/reports/bitget/20261021-assessment.json \
+  ~/Downloads/merkel_tree_bg.json
+```
+
+| Exchange | Scheme | Root width |
+| --- | --- | --- |
+| `bitget` | self + path, balances folded | 64 bits (truncated) |
+| `bingx` | leaf + path, no fold | 256 bits |
+| `mexc` | self + path, balances folded | 128 bits (truncated) |
+| `bybit` | 40-asset vector, height in preimage | 256 bits |
+
+The proof contains your account id, nonce and balances. Keep it on your machine: the script prints verdicts only, writes nothing, and never echoes those fields. Parity with the Go verifiers in `vendor/ardmere.github.io/internal` is covered by `python3 -m unittest discover -s tests`.
+
+A pass means your leaf is in the tree that produced that root. It is not a solvency proof and it does not move the custody score. When the assessment publishes no exchange merkle root, `binding.matches` is `null` — that is "not bound", not "matched".
+
+Bitget needs one caveat: its assessment publishes a 256-bit `exchangeMerkleRoot` but its user proofs produce 64-bit roots. The two cannot be compared, so the script reports `ROOT_WIDTH_MISMATCH` and leaves `matches` as `null` rather than calling your proof wrong.
+
 ## Who publishes a snapshot to NEAR
 
 Three separate roles. Nothing here writes to mainnet.
