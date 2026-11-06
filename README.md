@@ -14,9 +14,57 @@ Assessments are copied from `ardmere/ardmere.github.io` at commit `57a5bcd`. The
 - `defi`. The same check a trading agent would read before treating a CEX as a venue: a 0–100 custody risk score and the factors for one snapshot. The agent or the person decides whether to trade.
 - `security`. The same check. A hash mismatch or a blocking flag raises the score. The score is the signal. It does not place orders or move funds.
 
+## Toolchain
+
+`demo/run.sh` expects these on your `PATH`:
+
+| Tool | Role |
+| --- | --- |
+| `cargo`, `rustup` | Build the contract WASM |
+| `wasm32-unknown-unknown` (rustup target) | Contract compile target |
+| `near` ([near-cli-rs](https://github.com/near/near-cli-rs)) | Deploy and view calls against the local sandbox |
+| `near-sandbox` **or** `npx` | Local NEAR node (`npx` runs `near-sandbox@0.3.5` if the binary is missing) |
+| `python3`, `curl` | Fixture checks and HTTP helpers |
+
+### Linux (Debian / Ubuntu)
+
+System packages for building `near-cli-rs` (including `hidapi`):
+
+```bash
+sudo apt-get update
+sudo apt-get install -y curl pkg-config libssl-dev libudev-dev
+```
+
+Rust (stable; `near-cli-rs` needs a recent compiler):
+
+```bash
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+source "$HOME/.cargo/env"
+rustup update stable
+rustup default stable
+rustup target add wasm32-unknown-unknown
+```
+
+`near` CLI:
+
+```bash
+cargo install near-cli-rs --locked
+```
+
+Node.js with `npx` is enough for the sandbox; install Node from your distro or [nodejs.org](https://nodejs.org/) if `npx` is missing. Optionally install a `near-sandbox` binary instead; the script prefers it when present.
+
+Verify:
+
+```bash
+cargo --version
+rustup target list --installed | grep wasm32-unknown-unknown
+near --version
+command -v npx || command -v near-sandbox
+```
+
 ## Reproduce
 
-Toolchain: Rust with the `wasm32-unknown-unknown` target, `near-sandbox`, and `near` (near-cli-rs).
+From the repo root:
 
 ```bash
 ./demo/run.sh
