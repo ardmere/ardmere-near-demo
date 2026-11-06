@@ -10,7 +10,7 @@ This skill scores custody risk. It does not decide whether to trade. The final t
 Run the script and read the JSON. Use `riskScore`, `riskLevel`, and `factors`. There is no `decision` field. Do not invent allow, reduce, or block.
 
 ```bash
-skills/por-risk-control/scripts/por-check.sh fixtures/assessments/okx-508756245-assessment.json
+skills/por-risk-control/scripts/por-check.sh vendor/ardmere.github.io/docs/reports/okx/508756245-assessment.json
 ```
 
 The script hashes that file, compares the hex to `fixtures/digests.json`, and compares it to the NEAR `get` result in `fixtures/near-views.json` when that view is present. Point values are fixed in `references/decision-table.md`.

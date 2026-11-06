@@ -6,7 +6,17 @@ One contract stores an assessment digest. One skill scores custody risk from tha
 
 ## Baseline
 
-Assessments are copied from `ardmere/ardmere.github.io` at commit `57a5bcd`. The registry and the Ethereum Sepolia anchor stay in that repo. This repo is the NEAR slice.
+Assessment JSON comes from the **git submodule** [`vendor/ardmere.github.io`](https://github.com/ardmere/ardmere.github.io), pinned to the same baseline commit as `fixtures/digests.json` (`sourceCommit`). The registry and the Ethereum Sepolia anchor stay in that repo. This repo is the NEAR slice plus the skill and dashboard.
+
+Clone with submodules:
+
+```bash
+git clone --recurse-submodules https://github.com/ardmere/ardmere-near-demo.git
+# or, on an existing checkout:
+git submodule update --init --recursive
+```
+
+To move the submodule to a newer upstream commit, update the checkout under `vendor/ardmere.github.io`, refresh `fixtures/digests.json` paths and sha256 entries, then commit both the submodule pointer and this repo.
 
 ## Tracks
 

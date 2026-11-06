@@ -3,14 +3,14 @@
   "sourceCommit": "57a5bcd86fee960691a8ae31c61e6277ecb2a270",
   "assessments": [
     {
-      "path": "fixtures/assessments/okx-508756245-assessment.json",
+      "path": "vendor/ardmere.github.io/docs/reports/okx/508756245-assessment.json",
       "exchange": "okx",
       "snapshotId": "508756245",
       "sha256": "708b8b8aa6a8178df04bcbc2714d0ff8323e37f274f309edc8bc670c377ef9a0",
       "reportUrl": "https://ardmere.github.io/docs/reports/okx/508756245-transparency-report.html"
     },
     {
-      "path": "fixtures/assessments/kucoin-20261031-assessment.json",
+      "path": "vendor/ardmere.github.io/docs/reports/kucoin/20261031-assessment.json",
       "exchange": "kucoin",
       "snapshotId": "20261031",
       "sha256": "53290a7f5021032f580e538ebe1c3fa1ced0d2503a65984da93c6b53a0b0ef79",
