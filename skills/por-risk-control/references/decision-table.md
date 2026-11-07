@@ -25,8 +25,9 @@ If the assessment file is missing, `fixtures/digests.json` cannot be read, the f
 | `DIGESTS_UNREADABLE` | `fixtures/digests.json` is missing or is not the expected JSON |
 | `DIGEST_MISMATCH` | The file sha256 differs from the `digests.json` row, or the row is missing |
 | `NEAR_GET_MISMATCH` | A `get` view for this exchange and snapshot is present and the hash differs |
+| `NEAR_GET_MISSING` | The view came from a live contract (`near.live` is `true`) and that contract holds no record for this snapshot |
 
-A missing NEAR view is not a mismatch. The view is optional. Comparison is on the 32-byte hex, case-insensitive, `0x` ignored.
+A missing NEAR view from the sandbox recording is not a mismatch. The recording is optional, so its silence says nothing about the chain. `NEAR_GET_MISSING` applies only to a live `get` that answered "not found": the snapshot is not anchored yet. Comparison is on the 32-byte hex, case-insensitive, `0x` ignored.
 
 ## Blocking flags
 
@@ -38,6 +39,23 @@ These ids are the public framework's high flags that block a stage. Each occurre
 | `LOGIN_WALL` | 40 |
 | `SAMPLE_ONLY` | 40 |
 | `BLACK_BOX_INCLUSION_PROOF` | 40 |
+
+`BLACK_BOX_INCLUSION_PROOF` and `LOGIN_WALL` describe the exchange's artifact, not the user's own file. Verifying a user's inclusion proof locally does not remove either flag: the flag says the public cannot check the tree, and one user's private proof does not change that. Report a pass as "your leaf was in the published tree", never as "this flag is resolved".
+
+## User inclusion proof
+
+`scripts/inclusion_check.py` is separate from the score. It verifies one user's proof and never adds or removes `factors`. A failing proof does not raise `riskScore`; it means the proof the user holds is not consistent with the root it names.
+
+| Verdict | Meaning |
+| --- | --- |
+| `PASS` | the leaf and path recompute to the root the proof names |
+| `FAIL` | they do not; the file is inconsistent, altered, or for another snapshot |
+
+`binding.matches` compares the recomputed root with the assessment's `snapshot.exchangeMerkleRoot`. `null` means nothing was bound: either the assessment publishes no root, or the published root has a different width than the scheme produces.
+
+`ROOT_WIDTH_MISMATCH` marks the second case. Bitget currently publishes a 256-bit root while its user proofs produce 64-bit roots, so those two cannot be compared. Do not turn that into a claim about the user's proof.
+
+`TRUNCATED_HASH` marks schemes that keep fewer than 256 bits: Bitget 64, MEXC 128. Treat those passes as weak evidence, in the same way the upstream verifier notes do.
 
 ## Stage below effective PoR
 

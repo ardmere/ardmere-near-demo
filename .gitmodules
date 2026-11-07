@@ -1,0 +1,3 @@
+[submodule "vendor/ardmere.github.io"]
+	path = vendor/ardmere.github.io
+	url = https://github.com/ardmere/ardmere.github.io.git

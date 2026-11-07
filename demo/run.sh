@@ -34,6 +34,10 @@ for var in NEAR_ENV NEAR_NETWORK NEAR_RPC_URL NEAR_ACCOUNT_ID NEAR_ACCOUNT NEAR_
   check_pointed_at "$var" "${!var-}"
 done
 
+if [[ ! -e "$ROOT/vendor/ardmere.github.io/docs/reports/okx/508756245-assessment.json" ]]; then
+  refuse "submodule vendor/ardmere.github.io is missing. Run: git submodule update --init --recursive"
+fi
+
 command -v cargo >/dev/null 2>&1 || refuse "cargo is not installed"
 command -v rustup >/dev/null 2>&1 || refuse "rustup is not installed"
 rustup target list --installed | grep -q '^wasm32-unknown-unknown$' || refuse "rust target wasm32-unknown-unknown is not installed"
@@ -201,7 +205,7 @@ from pathlib import Path
 root = Path(sys.argv[1])
 work = Path(sys.argv[2])
 digests = json.loads((root / "fixtures/digests.json").read_text())
-files = sorted((root / "fixtures/assessments").glob("*.json"))
+files = [(root / row["path"]) for row in digests["assessments"]]
 listed = {row["path"] for row in digests["assessments"]}
 found = set()
 for path in files:
@@ -323,9 +327,9 @@ fi
 SANDBOX_PID=""
 
 echo "risk scores"
-for file in "$ROOT"/fixtures/assessments/*.json; do
-  skills/por-risk-control/scripts/por-check.sh "$file"
-done
+while IFS= read -r rel; do
+  skills/por-risk-control/scripts/por-check.sh "$ROOT/$rel"
+done < <(python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); print("\n".join(r["path"] for r in d["assessments"]))' "$ROOT/fixtures/digests.json")
 
 PORT=8765
 while [[ "$PORT" -lt 8780 ]] && curl -sf "http://127.0.0.1:${PORT}/" >/dev/null 2>&1; do

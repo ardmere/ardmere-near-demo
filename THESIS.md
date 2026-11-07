@@ -4,7 +4,7 @@ A trading agent that uses CEX liquidity needs a custody-risk record anyone can r
 
 ## Evidence for
 
-The assessment files in `fixtures/assessments/` are the public OKX `508756245` and KuCoin `20261031` JSON from `ardmere/ardmere.github.io` commit `57a5bcd`. Anyone can sha256 those bytes and compare them to `fixtures/digests.json`.
+The assessment files are the public OKX `508756245` and KuCoin `20261031` JSON from the git submodule `vendor/ardmere.github.io` at `ardmere/ardmere.github.io` commit `57a5bcd` (see `fixtures/digests.json` for exact paths under `docs/reports/...`). Anyone can sha256 those bytes and compare them to `fixtures/digests.json`.
 
 `por_digest_anchor` stores that digest under `(exchange, snapshot_id)`. `get` and `get_latest` return it. The same call works in a local NEAR sandbox, with no exchange RPC and no custody of funds.
 

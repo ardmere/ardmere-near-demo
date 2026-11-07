@@ -6,7 +6,78 @@ One contract stores an assessment digest. One skill scores custody risk from tha
 
 ## Baseline
 
-Assessments are copied from `ardmere/ardmere.github.io` at commit `57a5bcd`. The registry and the Ethereum Sepolia anchor stay in that repo. This repo is the NEAR slice.
+Assessment JSON comes from the **git submodule** [`vendor/ardmere.github.io`](https://github.com/ardmere/ardmere.github.io), pinned to the same baseline commit as `fixtures/digests.json` (`sourceCommit`). The registry and the Ethereum Sepolia anchor stay in that repo. This repo is the NEAR slice plus the skill and dashboard.
+
+Clone with submodules:
+
+```bash
+git clone --recurse-submodules https://github.com/ardmere/ardmere-near-demo.git
+# or, on an existing checkout:
+git submodule update --init --recursive
+```
+
+To move the submodule to a newer upstream commit, update the checkout under `vendor/ardmere.github.io`, refresh `fixtures/digests.json` paths and sha256 entries, then commit both the submodule pointer and this repo.
+
+## Cursor: `por-risk-control` skill
+
+This repo ships a symlink so Cursor can discover the skill in place:
+
+- `.cursor/skills/por-risk-control` → `skills/por-risk-control` (same `SKILL.md` and `scripts/` as the CLI)
+
+Open this folder as the workspace root in Cursor; the agent can use it when you ask for a custody risk score from a public assessment file. The runnable check remains:
+
+```bash
+skills/por-risk-control/scripts/por-check.sh vendor/ardmere.github.io/docs/reports/okx/508756245-assessment.json
+```
+
+## Checking your own inclusion proof
+
+`por-check.sh` scores an exchange. It cannot tell you whether *your* balance was in the snapshot. For that, the skill verifies the proof file your exchange gives you, locally:
+
+```bash
+skills/por-risk-control/scripts/inclusion_check.py --list-schemes
+skills/por-risk-control/scripts/inclusion_check.py --exchange bybit ~/Downloads/myProof.json
+# bind it to what the assessment published, when a root is published:
+skills/por-risk-control/scripts/inclusion_check.py --exchange bitget \
+  --assessment vendor/ardmere.github.io/docs/reports/bitget/20261021-assessment.json \
+  ~/Downloads/merkel_tree_bg.json
+```
+
+| Exchange | Scheme | Root width |
+| --- | --- | --- |
+| `bitget` | self + path, balances folded | 64 bits (truncated) |
+| `bingx` | leaf + path, no fold | 256 bits |
+| `mexc` | self + path, balances folded | 128 bits (truncated) |
+| `bybit` | 40-asset vector, height in preimage | 256 bits |
+
+The proof contains your account id, nonce and balances. Keep it on your machine: the script prints verdicts only, writes nothing, and never echoes those fields. Parity with the Go verifiers in `vendor/ardmere.github.io/internal` is covered by `python3 -m unittest discover -s tests`.
+
+A pass means your leaf is in the tree that produced that root. It is not a solvency proof and it does not move the custody score. When the assessment publishes no exchange merkle root, `binding.matches` is `null` — that is "not bound", not "matched".
+
+Bitget needs one caveat: its assessment publishes a 256-bit `exchangeMerkleRoot` but its user proofs produce 64-bit roots. The two cannot be compared, so the script reports `ROOT_WIDTH_MISMATCH` and leaves `matches` as `null` rather than calling your proof wrong.
+
+## Who publishes a snapshot to NEAR
+
+Three separate roles. Nothing here writes to mainnet.
+
+| Role | Command | Key |
+| --- | --- | --- |
+| Detect upstream drift | `python3 scripts/upstream_check.py` | none |
+| Anchor what is missing on testnet | `python3 scripts/near_digest.py --contract <c.testnet> reconcile --apply` | owner |
+| Read a score | `POR_NEAR_CONTRACT=<c.testnet> skills/por-risk-control/scripts/por-check.sh <file>` | none |
+
+`scripts/upstream_check.py` only reads the submodule and the manifest. `scripts/near_digest.py` is idempotent: a snapshot already on chain with the same bytes is skipped, and different bytes fail instead of overwriting. Neither is a timer that re-sends transactions; the trigger is a manifest change, not a clock.
+
+Two workflows wire this up:
+
+- `.github/workflows/upstream-check.yml` runs nightly, advances the submodule in the CI checkout, and opens `cursor/upstream-sync` when a listed assessment changed. No secrets.
+- `.github/workflows/anchor-testnet.yml` runs on `main` when the manifest or the submodule pointer moves, and anchors only what testnet is missing. It needs `vars.NEAR_CONTRACT_ID` and `secrets.NEAR_TESTNET_OWNER_KEY`, writes the key to a temporary keychain, and deletes it afterwards.
+
+Merging the sync PR is a human decision about which snapshots this demo vouches for, and it is what triggers anchoring. The demo therefore becomes the publisher of the NEAR records it serves; the upstream repo stays the source of the assessments and the Sepolia anchor.
+
+## Reading live versus sandbox
+
+`fixtures/near-views.json` is a sandbox recording. With `POR_NEAR_CONTRACT` unset, the skill reads that file; the `near.live` field is `false`. Set `POR_NEAR_CONTRACT` to a testnet account and the `get` comes from the chain with `near.live` `true`. Quote which one produced a number before quoting the number.
 
 ## Tracks
 
