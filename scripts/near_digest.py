@@ -98,6 +98,18 @@ def view_get(contract, network, exchange, snapshot_id):
     return None, False, "view returned no DigestRecord"
 
 
+def point_latest(contract, network, exchange, snapshot_id):
+    cmd = [
+        "near", "contract", "call-function", "as-transaction", contract, "point_latest",
+        "json-args", json.dumps({"exchange": exchange, "snapshot_id": snapshot_id}),
+        "prepaid-gas", "30 Tgas", "attached-deposit", "0 NEAR",
+        "sign-as", contract, "network-config", network, "sign-with-legacy-keychain", "send",
+    ]
+    proc = run_near(cmd, SEND_TIMEOUT)
+    if proc.returncode != 0:
+        raise NearError(f"point_latest failed for {exchange} {snapshot_id}:\n{proc.stdout}{proc.stderr}")
+
+
 def anchor(contract, network, row):
     args = {
         "exchange": row["exchange"],
@@ -236,6 +248,13 @@ def cmd_reconcile(opts):
         anchor(opts.contract, network, row)
         print(f"anchored {label} ({file_sha})")
         anchored += 1
+    if opts.apply and not problems:
+        newest = {}
+        for row in rows:
+            newest[row["exchange"]] = str(row["snapshotId"])
+        for exchange, snapshot_id in newest.items():
+            point_latest(opts.contract, network, exchange, snapshot_id)
+            print(f"latest   {exchange} {snapshot_id}")
     if problems:
         for line in problems:
             print(f"FAIL     {line}", file=sys.stderr)
