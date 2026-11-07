@@ -6,7 +6,7 @@ In the public assessments pinned in this repo, mainstream exchange Proof-of-Rese
 
 At `ardmere/ardmere.github.io` commit `57a5bcd` the submodule holds 43 assessments across 9 exchanges. 36 are Stage 0 and carry `UNVERIFIABLE` (Binance, BingX, Bitget, Bybit, Gate, HTX, KuCoin, MEXC). The other 7 are OKX, all Stage 1, and each carries `NO_CANONICAL_ANCHOR` and `HIGH_FREQUENCY_GAP`. Stage here is a label for how much of the disclosure a third party can recompute. It is not a credit rating.
 
-The two assessments this demo anchors, OKX `508756245` and KuCoin `20261031`, are in that set. Paths are in `fixtures/digests.json`. Anyone can sha256 those bytes and compare them to `fixtures/digests.json`.
+`fixtures/digests.json` lists all 43 of those assessments, every exchange the upstream repo publishes at that commit. Anyone can sha256 a listed file and compare it to the manifest. `get_latest` is pointed at the newest snapshot by `snapshotTime` for each exchange.
 
 `por_digest_anchor` stores that digest under `(exchange, snapshot_id)`. `get` and `get_latest` return it. The same call works in a local NEAR sandbox, with no exchange RPC and no custody of funds.
 

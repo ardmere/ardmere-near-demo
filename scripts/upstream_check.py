@@ -4,9 +4,9 @@
 Reads the submodule only. No network, no keys, no chain calls. Exit code 1 means the
 manifest is behind the submodule, so CI can open a PR or fail a check.
 
-    upstream_check.py                     # report drift
-    upstream_check.py --update            # rewrite fixtures/digests.json
-    upstream_check.py --add binance/PR04NOV26  # add one new assessment by exchange/id
+    upstream_check.py                     # report drift, including assessments not yet listed
+    upstream_check.py --update            # refresh changed rows and add every unlisted assessment
+    upstream_check.py --update --add binance/PR04NOV26  # add only the unlisted rows this text matches
 """
 
 import argparse
@@ -63,6 +63,7 @@ def assessment_fields(path):
         "porStage": stage,
         "effectivePor": effective,
         "methodologyVersion": methodology,
+        "snapshotTime": snapshot.get("snapshotTime") if isinstance(snapshot.get("snapshotTime"), str) else "",
         "reportUrl": report_url(exchange, str(snapshot_id)),
     }
 
@@ -115,34 +116,34 @@ def main(argv):
         print(f"CHANGED  {path}")
     for path in gone:
         print(f"MISSING  {path}")
+    for path in new:
+        print(f"NEW      {path}")
 
     selected = []
     if opts.add:
         for needle in opts.add:
-            hits = [p for p in on_disk if needle in p and p not in listed]
+            hits = [p for p in new if needle in p]
             if not hits:
                 print(f"upstream_check: --add {needle} matched no unlisted assessment", file=sys.stderr)
                 return 2
             selected.extend(hits)
+    elif opts.update:
+        selected = list(new)
 
-    drift = bool(changed or gone)
+    drift = bool(changed or gone or new)
     if not opts.update:
-        print(f"unlisted upstream assessments: {len(new)} (the manifest is a curated subset)")
-        ahead = bool(head and doc.get("sourceCommit") and head != doc.get("sourceCommit"))
+        exchanges = sorted({fields["exchange"] for fields in on_disk.values()})
+        print(f"exchanges in the submodule: {', '.join(exchanges)}")
         if drift:
             print("drift")
             return 1
-        if ahead:
-            print("note: the submodule is ahead of sourceCommit, but no listed assessment changed")
-        print("manifest matches the submodule")
+        print("manifest lists every assessment in the submodule")
         return 0
 
-    if changed:
-        refreshed = {p: on_disk[p] for p in changed}
-        for row in rows:
-            if row["path"] in refreshed:
-                row.update(refreshed[row["path"]])
-        print(f"refreshed {len(changed)} changed entries")
+    for row in rows:
+        fields = on_disk.get(row["path"])
+        if fields is not None:
+            row.update(fields)
 
     for path in selected:
         fields = on_disk[path]
@@ -150,7 +151,7 @@ def main(argv):
         rows.append({"path": path, **fields})
         print(f"added {path}")
 
-    rows.sort(key=lambda row: row["path"])
+    rows.sort(key=lambda row: (row.get("exchange") or "", row.get("snapshotTime") or "", row["path"]))
     doc["assessments"] = rows
     if head:
         doc["sourceCommit"] = head

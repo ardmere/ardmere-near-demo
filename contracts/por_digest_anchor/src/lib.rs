@@ -77,6 +77,22 @@ impl Contract {
         self.records.insert(key, record);
     }
 
+    /// Point get_latest at a snapshot that is already stored.
+    /// anchor() moves the pointer on every new write, including an older snapshot
+    /// that arrives after a newer one. The manifest order is the source of which
+    /// snapshot is current, so the publisher calls this after reconciling.
+    pub fn point_latest(&mut self, exchange: String, snapshot_id: String) {
+        if env::predecessor_account_id() != self.owner {
+            env::panic_str("only the account that deployed this contract may anchor");
+        }
+        require_label("exchange", &exchange);
+        require_label("snapshot_id", &snapshot_id);
+        if self.records.get(&record_key(&exchange, &snapshot_id)).is_none() {
+            env::panic_str("digest not found");
+        }
+        self.latest.insert(exchange, snapshot_id);
+    }
+
     pub fn get(&self, exchange: String, snapshot_id: String) -> DigestRecord {
         match self.records.get(&record_key(&exchange, &snapshot_id)) {
             Some(record) => record.clone(),
