@@ -1,8 +1,10 @@
 # ardmere NEAR demo
 
-A trading agent that uses CEX liquidity needs a custody-risk record anyone can re-hash and re-query, and NEAR fits because one contract stores the digest and a view call returns it.
+Public Proof-of-Reserves from mainstream exchanges, in the assessments vendored here, is mostly not something a third party can recompute. At submodule commit `57a5bcd` there are 43 snapshots across 9 exchanges: 36 are Stage 0 and carry `UNVERIFIABLE`. OKX is the only exchange at Stage 1 (7 snapshots), and every one of those still carries `NO_CANONICAL_ANCHOR`.
 
-One contract stores an assessment digest. One skill scores custody risk from that digest. One page shows the score beside the hash and the NEAR view.
+NEAR stores the sha256 of each listed assessment. A view call returns the same 32 bytes, so the measurement can be re-hashed and re-queried. The contract does not verify reserves. Anchoring a digest does not make a disclosure verifiable, and it is not a record that exchange disclosure advanced.
+
+One contract stores the digest. One skill turns the public flags into a 0–100 score of how far a snapshot is from being recomputable. One page shows that score beside the file hash and the NEAR view.
 
 ## Baseline
 
