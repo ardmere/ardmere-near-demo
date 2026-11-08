@@ -8,9 +8,9 @@ Filling an intent leaves the solver holding the asset the user sold. It quotes s
 
 When hedging, the solver's own capital sits at the venue. That custodial exposure is why a reserve assessment has a reader here. A solver choosing where to hedge is choosing where to leave capital, and the 57 assessments vendored in this repo say what is currently checkable about those venues: 50 of 57 are Stage 0 with `UNVERIFIABLE`, meaning a third party cannot recompute the disclosure. That is a fact a solver can cite when picking a hedge venue — the same fact whether the reader is a solver, an agent, or a person.
 
-NEAR makes that fact readable with a `view` call: no account, no key, no payment. Any solver, in any language, can read the same 32 bytes a judge reads. A named account such as `por-digest-anchor.ardmere-demo-1fc2.testnet` is checkable by reading it, not by trusting a hex string. A hosted API can rate-limit, go down, or change its answer; a `view` call at a block height cannot.
+Ardmere anchors the sha256 of each exchange-published snapshot on NEAR (`por-digest-anchor.ardmere-demo-1fc2.testnet`). Anyone verifying a hedge venue can hash the local assessment file and compare it to that on-chain digest — without calling the exchange's API. An exchange API can rate-limit, go down, or change its answer; the anchored digest at a block height cannot.
 
-The chain is not what makes a solver safer. It is where the measurement about hedge venues can be read by anyone who needs it, without asking permission.
+The chain is not what makes a solver safer. It is an independent place to check what a venue published, without asking that venue for permission.
 
 ---
 
