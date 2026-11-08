@@ -6,6 +6,7 @@ use near_sdk::{env, near, AccountId, PanicOnDefault};
 use std::collections::HashMap;
 
 const KEY_SEP: char = '\u{1}';
+const PERIOD_KEY_SEP: char = '\u{2}';
 
 /// Matches ArdmerePoRAnchor SCHEMA_VERSION on Sepolia (v4 = stage + dual coverage).
 pub const SCHEMA_VERSION: u8 = 4;
@@ -51,7 +52,17 @@ pub struct SnapshotRecord {
 pub struct Contract {
     owner: AccountId,
     records: HashMap<String, SnapshotRecord>,
+    /// snapshot_id_hash (64 hex) → record_key(exchange, snapshot_id)
+    by_snapshot_id_hash: HashMap<String, String>,
+    /// Manifest / demo pointer: plaintext exchange → snapshot_id
     latest: HashMap<String, String>,
+    /// Last chronologically anchored snapshot per exchange_tag (Sepolia latestSnapshotId)
+    latest_by_tag: HashMap<String, String>,
+    /// exchange_tag → snapshot_id_hash values in anchor order (0 = earliest)
+    snapshot_ids: HashMap<String, Vec<String>>,
+    snapshot_count: HashMap<String, u64>,
+    /// exchange_tag + period_seq → snapshot_id_hash
+    snapshot_by_period: HashMap<String, String>,
 }
 
 #[near]
@@ -61,7 +72,12 @@ impl Contract {
         Self {
             owner: env::predecessor_account_id(),
             records: HashMap::new(),
+            by_snapshot_id_hash: HashMap::new(),
             latest: HashMap::new(),
+            latest_by_tag: HashMap::new(),
+            snapshot_ids: HashMap::new(),
+            snapshot_count: HashMap::new(),
+            snapshot_by_period: HashMap::new(),
         }
     }
 
@@ -139,7 +155,63 @@ impl Contract {
         };
         emit_anchored(&record);
         self.latest.insert(record.exchange.clone(), snapshot_id);
-        self.records.insert(key, record);
+        self.records.insert(key.clone(), record.clone());
+        self.register_indices(&record, &key);
+    }
+
+    /// Whether a snapshot exists (Sepolia snapshotExists), keyed by keccak256(auditId).
+    pub fn snapshot_exists(&self, snapshot_id_hash: String) -> bool {
+        let hash = require_hex32("snapshot_id_hash", &snapshot_id_hash);
+        self.by_snapshot_id_hash.contains_key(&hash)
+    }
+
+    /// Fetch one snapshot by keccak256(auditId) (Sepolia getSnapshot).
+    pub fn get_snapshot(&self, snapshot_id_hash: String) -> SnapshotRecord {
+        self.record_by_snapshot_id_hash(&require_hex32(
+            "snapshot_id_hash",
+            &snapshot_id_hash,
+        ))
+    }
+
+    /// Most recently anchored snapshot for an exchange tag (Sepolia getLatestSnapshot).
+    pub fn get_latest_snapshot(&self, exchange_tag: String) -> SnapshotRecord {
+        let tag = require_hex32("exchange_tag", &exchange_tag);
+        let snapshot_id_hash = match self.latest_by_tag.get(&tag) {
+            Some(value) => value.clone(),
+            None => env::panic_str("snapshot not found"),
+        };
+        self.record_by_snapshot_id_hash(&snapshot_id_hash)
+    }
+
+    /// Fetch a snapshot by exchange tag and period sequence (Sepolia getSnapshotByPeriod).
+    pub fn get_snapshot_by_period(&self, exchange_tag: String, period_seq: u32) -> SnapshotRecord {
+        let tag = require_hex32("exchange_tag", &exchange_tag);
+        let period_key = period_map_key(&tag, period_seq);
+        let snapshot_id_hash = match self.snapshot_by_period.get(&period_key) {
+            Some(value) => value.clone(),
+            None => env::panic_str("snapshot not found"),
+        };
+        self.record_by_snapshot_id_hash(&snapshot_id_hash)
+    }
+
+    /// Number of anchored snapshots for an exchange tag (Sepolia getSnapshotCount).
+    pub fn get_snapshot_count(&self, exchange_tag: String) -> u64 {
+        let tag = require_hex32("exchange_tag", &exchange_tag);
+        *self.snapshot_count.get(&tag).unwrap_or(&0)
+    }
+
+    /// Snapshot id hash at chronological index, 0 = earliest (Sepolia getSnapshotIdAt).
+    pub fn get_snapshot_id_at(&self, exchange_tag: String, index: u64) -> String {
+        let tag = require_hex32("exchange_tag", &exchange_tag);
+        let ids = match self.snapshot_ids.get(&tag) {
+            Some(values) => values,
+            None => env::panic_str("snapshot index out of bounds"),
+        };
+        let idx = usize::try_from(index).unwrap_or_else(|_| env::panic_str("snapshot index out of bounds"));
+        if idx >= ids.len() {
+            env::panic_str("snapshot index out of bounds");
+        }
+        ids[idx].clone()
     }
 
     /// Point get_latest at a snapshot that is already stored.
@@ -172,6 +244,44 @@ impl Contract {
         };
         self.get(exchange, snapshot_id)
     }
+
+    fn register_indices(&mut self, record: &SnapshotRecord, record_key: &str) {
+        let tag = record.exchange_tag.clone();
+        let snapshot_id_hash = record.snapshot_id_hash.clone();
+        if self.by_snapshot_id_hash.contains_key(&snapshot_id_hash) {
+            env::panic_str("snapshot id hash already anchored");
+        }
+        self.by_snapshot_id_hash
+            .insert(snapshot_id_hash.clone(), record_key.to_string());
+        self.snapshot_ids
+            .entry(tag.clone())
+            .or_default()
+            .push(snapshot_id_hash.clone());
+        *self.snapshot_count.entry(tag.clone()).or_insert(0) += 1;
+        self.latest_by_tag.insert(tag.clone(), snapshot_id_hash.clone());
+        // Assessments often carry periodSeq 0 as a placeholder; only index real periods.
+        if record.period_seq > 0 {
+            let period_key = period_map_key(&tag, record.period_seq);
+            if let Some(existing) = self.snapshot_by_period.get(&period_key) {
+                if existing != &snapshot_id_hash {
+                    env::panic_str("period already anchored with a different snapshot");
+                }
+            } else {
+                self.snapshot_by_period.insert(period_key, snapshot_id_hash);
+            }
+        }
+    }
+
+    fn record_by_snapshot_id_hash(&self, snapshot_id_hash: &str) -> SnapshotRecord {
+        let record_key = match self.by_snapshot_id_hash.get(snapshot_id_hash) {
+            Some(value) => value,
+            None => env::panic_str("snapshot not found"),
+        };
+        match self.records.get(record_key) {
+            Some(record) => record.clone(),
+            None => env::panic_str("snapshot not found"),
+        }
+    }
 }
 
 fn require_label(name: &str, value: &str) {
@@ -182,6 +292,18 @@ fn require_label(name: &str, value: &str) {
 
 fn record_key(exchange: &str, snapshot_id: &str) -> String {
     format!("{exchange}{KEY_SEP}{snapshot_id}")
+}
+
+fn period_map_key(exchange_tag: &str, period_seq: u32) -> String {
+    format!("{exchange_tag}{PERIOD_KEY_SEP}{period_seq}")
+}
+
+fn require_hex32(name: &str, value: &str) -> String {
+    let hex = value.strip_prefix("0x").unwrap_or(value).to_ascii_lowercase();
+    if hex.len() != 64 || !hex.chars().all(|c| c.is_ascii_hexdigit()) {
+        env::panic_str(&format!("{name} must be 32 bytes (64 hex chars)"));
+    }
+    hex
 }
 
 fn keccak_hex(bytes: &[u8]) -> String {
@@ -325,11 +447,12 @@ mod tests {
         )
     }
 
-    fn anchor(
+    fn anchor_with_period(
         contract: &mut Contract,
         exchange: &str,
         snapshot_id: &str,
         assessment_hash: &str,
+        period_seq: u32,
         stage: u8,
         effective: bool,
         seed: u8,
@@ -338,7 +461,7 @@ mod tests {
         contract.anchor(
             exchange.to_string(),
             snapshot_id.to_string(),
-            1,
+            period_seq,
             1_700_000_000,
             0,
             ex_root,
@@ -353,6 +476,18 @@ mod tests {
             assessment_hash.to_string(),
             "por-transparency-framework@2026-07-01".to_string(),
         );
+    }
+
+    fn anchor(
+        contract: &mut Contract,
+        exchange: &str,
+        snapshot_id: &str,
+        assessment_hash: &str,
+        stage: u8,
+        effective: bool,
+        seed: u8,
+    ) {
+        anchor_with_period(contract, exchange, snapshot_id, assessment_hash, 1, stage, effective, seed);
     }
 
     #[test]
@@ -414,9 +549,9 @@ mod tests {
     #[test]
     fn get_latest_follows_the_newest_snapshot() {
         let mut contract = setup(3);
-        anchor(&mut contract, "okx", "older", &"11".repeat(32), 2, true, 0x11);
+        anchor_with_period(&mut contract, "okx", "older", &"11".repeat(32), 1, 2, true, 0x11);
         set_context("owner.sandbox", 4);
-        anchor(&mut contract, "okx", "newer", &"22".repeat(32), 2, true, 0x22);
+        anchor_with_period(&mut contract, "okx", "newer", &"22".repeat(32), 2, 2, true, 0x22);
         assert_eq!(contract.get_latest("okx".to_string()).snapshot_id, "newer");
         assert_eq!(
             decode_sha256(&contract.get_latest("okx".to_string()).assessment_sha256),
@@ -424,12 +559,12 @@ mod tests {
         );
 
         set_context("owner.sandbox", 5);
-        anchor(&mut contract, "kucoin", "20261031", &"33".repeat(32), 1, false, 0x33);
+        anchor_with_period(&mut contract, "kucoin", "20261031", &"33".repeat(32), 1, 1, false, 0x33);
         assert_eq!(contract.get_latest("okx".to_string()).snapshot_id, "newer");
         assert_eq!(contract.get_latest("kucoin".to_string()).snapshot_id, "20261031");
 
         set_context("owner.sandbox", 9);
-        anchor(&mut contract, "okx", "older", &"11".repeat(32), 2, true, 0x11);
+        anchor_with_period(&mut contract, "okx", "older", &"11".repeat(32), 1, 2, true, 0x11);
         assert_eq!(contract.get_latest("okx".to_string()).snapshot_id, "newer");
         assert_eq!(
             contract.get("okx".to_string(), "older".to_string()).block_height,
@@ -443,5 +578,53 @@ mod tests {
         let mut contract = setup(1);
         set_context("other.sandbox", 2);
         anchor(&mut contract, "okx", "508756245", &"11".repeat(32), 2, true, 0x11);
+    }
+
+    #[test]
+    fn sepolia_query_surface() {
+        let mut contract = setup(1);
+        anchor_with_period(
+            &mut contract,
+            "okx",
+            "older",
+            &"11".repeat(32),
+            5,
+            2,
+            true,
+            0x11,
+        );
+        set_context("owner.sandbox", 2);
+        anchor_with_period(
+            &mut contract,
+            "okx",
+            "newer",
+            &"22".repeat(32),
+            6,
+            2,
+            true,
+            0x22,
+        );
+        let tag = keccak_hex(b"okx");
+        assert_eq!(contract.get_snapshot_count(tag.clone()), 2);
+        let first = contract.get_snapshot_id_at(tag.clone(), 0);
+        let second = contract.get_snapshot_id_at(tag.clone(), 1);
+        assert_eq!(first, keccak_hex(b"older"));
+        assert_eq!(second, keccak_hex(b"newer"));
+        assert!(contract.snapshot_exists(second.clone()));
+        assert_eq!(contract.get_snapshot(second.clone()).snapshot_id, "newer");
+        assert_eq!(contract.get_latest_snapshot(tag.clone()).snapshot_id, "newer");
+        assert_eq!(contract.get_snapshot_by_period(tag, 5).snapshot_id, "older");
+    }
+
+    #[test]
+    fn get_latest_snapshot_differs_from_manifest_pointer() {
+        let mut contract = setup(1);
+        anchor_with_period(&mut contract, "okx", "older", &"11".repeat(32), 3, 2, true, 0x11);
+        set_context("owner.sandbox", 2);
+        anchor_with_period(&mut contract, "okx", "newer", &"22".repeat(32), 4, 2, true, 0x22);
+        contract.point_latest("okx".to_string(), "older".to_string());
+        assert_eq!(contract.get_latest("okx".to_string()).snapshot_id, "older");
+        let tag = keccak_hex(b"okx");
+        assert_eq!(contract.get_latest_snapshot(tag).snapshot_id, "newer");
     }
 }

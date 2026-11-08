@@ -24,6 +24,18 @@ curl -sS -X POST https://rpc.testnet.fastnear.com \
 
 Expected: a `result.result` array that decodes to a Sepolia-aligned `SnapshotRecord` such as `{"exchange":"okx","snapshot_id":"508756245","assessment_sha256":"708b8b8a…ef9a0","artifact_bundle_root":"b92ad031…","verification_bundle_root":"78585399…","por_stage":2,"schema_version":4,…}` (`por_stage` 2 = Stage 1). `args_base64` is the base64 of `{"exchange":"okx"}`.
 
+Sepolia-style reads on NEAR (keccak hex tags/ids, no governance):
+
+| Sepolia | NEAR |
+| --- | --- |
+| `getSnapshot(snapshotId)` | `get_snapshot` — `snapshot_id_hash` = keccak256(utf8 audit id), 64 hex |
+| `getLatestSnapshot(exchangeTag)` | `get_latest_snapshot` — `exchange_tag` = keccak256(utf8 exchange) |
+| `getSnapshotByPeriod(exchangeTag, periodSeq)` | `get_snapshot_by_period` — only when `period_seq > 0` in the assessment |
+| `getSnapshotCount` / `getSnapshotIdAt` | `get_snapshot_count` / `get_snapshot_id_at` |
+| `snapshotExists` | `snapshot_exists` |
+
+Demo manifest pointer (which snapshot is “current” for scoring) stays `get_latest` + `point_latest` after reconcile.
+
 **Step 2 — hash the file the digest claims to cover.** After `git clone --recurse-submodules` (see [Baseline](#baseline)):
 
 ```bash
