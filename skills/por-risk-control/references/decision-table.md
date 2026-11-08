@@ -103,7 +103,7 @@ Fallback when the id is not listed above and is not blocking:
 
 The note on a flag factor is the assessment's `message` when it has one.
 
-## Fixtures copied from github.io `57a5bcd`
+## Fixtures copied from github.io `e4400bd`
 
 These are the scores of the unmodified files. Do not edit the JSON to change them.
 

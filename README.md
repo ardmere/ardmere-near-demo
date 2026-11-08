@@ -1,6 +1,6 @@
 # ardmere NEAR demo
 
-Public Proof-of-Reserves from mainstream exchanges, in the assessments vendored here, is mostly not something a third party can recompute. At submodule commit `57a5bcd` there are 43 snapshots across 9 exchanges: 36 are Stage 0 and carry `UNVERIFIABLE`. OKX is the only exchange at Stage 1 (7 snapshots), and every one of those still carries `NO_CANONICAL_ANCHOR`.
+Public Proof-of-Reserves from mainstream exchanges, in the assessments vendored here, is mostly not something a third party can recompute. At submodule commit `e4400bd` there are 57 snapshots across 19 exchanges: 50 are Stage 0 and carry `UNVERIFIABLE`. OKX is the only exchange at Stage 1 (7 snapshots), and every one of those still carries `NO_CANONICAL_ANCHOR`.
 
 NEAR stores the sha256 of each listed assessment. A view call returns the same 32 bytes, so the measurement can be re-hashed and re-queried. The contract does not verify reserves. Anchoring a digest does not make a disclosure verifiable, and it is not a record that exchange disclosure advanced.
 
@@ -145,6 +145,6 @@ From the repo root:
 
 `fixtures/near-views.json` in git is a sandbox recording, not a live chain. The script is the check.
 
-The manifest covers every snapshot from the nine exchanges in the submodule: Binance, BingX, Bitget, Bybit, Gate, HTX, KuCoin, MEXC, and OKX. Two examples: OKX `508756245` scores 10, `low` (`NO_CANONICAL_ANCHOR` +5 and `HIGH_FREQUENCY_GAP` +5). KuCoin `20261031` scores 75, `high` (`UNVERIFIABLE` +40 and stage +35). `fixtures/near-views.json` in git is a sandbox recording of those two snapshots. A full `./demo/run.sh` rewrites it for every listed snapshot. `THESIS.md` states the claim, the evidence for it, the evidence against it, and what result would drop the claim.
+The manifest covers every snapshot from the 19 exchanges in the submodule: Binance, BingX, Bitget, Bitunix, BTCC, Bybit, CoinEx, CoinW, Gate, HTX, Kraken, KuCoin, MEXC, OKX, Ourbit, Phemex, Poloniex, Toobit, and WOOX. Two examples: OKX `508756245` scores 10, `low` (`NO_CANONICAL_ANCHOR` +5 and `HIGH_FREQUENCY_GAP` +5). KuCoin `20261031` scores 75, `high` (`UNVERIFIABLE` +40 and stage +35). `fixtures/near-views.json` in git is a sandbox recording of those two snapshots. A full `./demo/run.sh` rewrites it for every listed snapshot. `THESIS.md` states the claim, the evidence for it, the evidence against it, and what result would drop the claim.
 
 Accounts the script prints exist only inside that sandbox process. They are not mainnet accounts.

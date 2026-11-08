@@ -4,9 +4,9 @@ In the public assessments pinned in this repo, mainstream exchange Proof-of-Rese
 
 ## Evidence for
 
-At `ardmere/ardmere.github.io` commit `57a5bcd` the submodule holds 43 assessments across 9 exchanges. 36 are Stage 0 and carry `UNVERIFIABLE` (Binance, BingX, Bitget, Bybit, Gate, HTX, KuCoin, MEXC). The other 7 are OKX, all Stage 1, and each carries `NO_CANONICAL_ANCHOR` and `HIGH_FREQUENCY_GAP`. Stage here is a label for how much of the disclosure a third party can recompute. It is not a credit rating.
+At `ardmere/ardmere.github.io` commit `e4400bd` the submodule holds 57 assessments across 19 exchanges. 50 are Stage 0 and carry `UNVERIFIABLE`: Binance, BingX, Bitget, Bitunix, BTCC, Bybit, CoinEx, CoinW, Gate, HTX, Kraken, KuCoin, MEXC, Ourbit, Phemex, Poloniex, Toobit, and WOOX. The other 7 are OKX, all Stage 1, and each carries `NO_CANONICAL_ANCHOR` and `HIGH_FREQUENCY_GAP`. Stage here is a label for how much of the disclosure a third party can recompute. It is not a credit rating.
 
-`fixtures/digests.json` lists all 43 of those assessments, every exchange the upstream repo publishes at that commit. Anyone can sha256 a listed file and compare it to the manifest. `get_latest` is pointed at the newest snapshot by `snapshotTime` for each exchange.
+`fixtures/digests.json` lists all 57 of those assessments, every exchange the upstream repo publishes at that commit. Anyone can sha256 a listed file and compare it to the manifest. `get_latest` is pointed at the newest snapshot by `snapshotTime` for each exchange.
 
 `por_digest_anchor` stores that digest under `(exchange, snapshot_id)`. `get` and `get_latest` return it. The same call works in a local NEAR sandbox, with no exchange RPC and no custody of funds.
 
@@ -22,7 +22,7 @@ The score is a reading of flags already on the public assessment. It is not a ne
 
 ## What would drop the claim
 
-A recount of the pinned assessments that does not show 36 of 43 snapshots as Stage 0 with `UNVERIFIABLE`, or that shows an exchange other than OKX at Stage 1. The measurement would be wrong for this commit.
+A recount of the pinned assessments that does not show 50 of 57 snapshots as Stage 0 with `UNVERIFIABLE`, or that shows an exchange other than OKX at Stage 1. The measurement would be wrong for this commit.
 
 A view that does not return the same 32 bytes the assessment file hashes to. The record would no longer be something anyone can re-check.
 
