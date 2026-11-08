@@ -1,5 +1,21 @@
 # ardmere NEAR demo
 
+## What this gives NEAR
+
+Ardmere gives NEAR Intents solvers a framework and data to assess CEX custodial risk, and anchors each PoR snapshot on NEAR so verification rests on a consistent on-chain digest.
+
+A NEAR Intents solver is a principal, not a matcher. Its own terms of use put it plainly: the solver "provides and maintains its own Liquidity, at its own cost and under its own control" and "bears all market, inventory, hedging, network, execution, and settlement risk as principal" ([Solver Terms of Use](https://docs.near-intents.org/integration/market-makers/solver-terms-of-use), §7.1 and §7.4).
+
+Filling an intent leaves the solver holding the asset the user sold. It quotes slightly worse than the price it can get by selling that asset elsewhere, and keeps the difference as spread. The venue it sells into is usually a centralized exchange, because that is where depth and latency are. Industry write-ups of intent-based market making describe CEXs as "the primary hedging layer" that "introduces custodial risk and a single point of failure" ([ChainScore](https://chainscorelabs.com/blog/trading/intent-based-architectures/inventory-risk-for-market-makers), [Flip](https://flipdex.co/notes/solver-economics)).
+
+When hedging, the solver's own capital sits at the venue. That custodial exposure is why a reserve assessment has a reader here. A solver choosing where to hedge is choosing where to leave capital, and the 57 assessments vendored in this repo say what is currently checkable about those venues: 50 of 57 are Stage 0 with `UNVERIFIABLE`, meaning a third party cannot recompute the disclosure. That is a fact a solver can cite when picking a hedge venue — the same fact whether the reader is a solver, an agent, or a person.
+
+Ardmere anchors the sha256 of each exchange-published snapshot on NEAR (`por-digest-anchor.ardmere-demo-1fc2.testnet`). Anyone verifying a hedge venue can hash the local assessment file and compare it to that on-chain digest — without calling the exchange's API. An exchange API can rate-limit, go down, or change its answer; the anchored digest at a block height cannot.
+
+The chain is not what makes a solver safer. It is an independent place to check what a venue published, without asking that venue for permission.
+
+---
+
 Public Proof-of-Reserves from mainstream exchanges, in the assessments vendored here, is mostly not something a third party can recompute. At submodule commit `e4400bd` there are 57 snapshots across 19 exchanges: 50 are Stage 0 and carry `UNVERIFIABLE`. OKX is the only exchange at Stage 1 (7 snapshots), and every one of those still carries `NO_CANONICAL_ANCHOR`.
 
 NEAR stores the sha256 of each listed assessment. A view call returns the same 32 bytes, so the measurement can be re-hashed and re-queried. The contract does not verify reserves. Anchoring a digest does not make a disclosure verifiable, and it is not a record that exchange disclosure advanced.
@@ -138,30 +154,6 @@ Merging the sync PR is a human decision about which snapshots this demo vouches 
 ## Reading live versus sandbox
 
 `fixtures/near-views.json` is a sandbox recording. With `POR_NEAR_CONTRACT` unset, the skill reads that file; the `near.live` field is `false`. Set `POR_NEAR_CONTRACT` to a testnet account and the `get` comes from the chain with `near.live` `true`. Quote which one produced a number before quoting the number.
-
-## What this gives NEAR
-
-A NEAR Intents solver is a principal, not a matcher. Its own terms of use put it plainly: the solver "provides and maintains its own Liquidity, at its own cost and under its own control" and "bears all market, inventory, hedging, network, execution, and settlement risk as principal" ([Solver Terms of Use](https://docs.near-intents.org/integration/market-makers/solver-terms-of-use), §7.1 and §7.4).
-
-Filling an intent leaves the solver holding the asset the user sold. It quotes slightly worse than the price it can get by selling that asset elsewhere, and keeps the difference as spread. The venue it sells into is usually a centralized exchange, because that is where depth and latency are. Industry write-ups of intent-based market making describe CEXs as "the primary hedging layer" that "introduces custodial risk and a single point of failure" ([ChainScore](https://chainscorelabs.com/blog/trading/intent-based-architectures/inventory-risk-for-market-makers), [Flip](https://flipdex.co/notes/solver-economics)).
-
-So the solver carries two exposures, and only one of them is on chain:
-
-| Stage | Exposure | Does a reserve assessment help? |
-| --- | --- | --- |
-| User ↔ solver | none: the swap settles atomically, or it refunds | no |
-| Solver ↔ exchange, when hedging | **custodial**: the solver's own capital sits at the venue | **yes** |
-
-The second one is why a reserve assessment has a reader in this ecosystem. A solver choosing where to hedge is choosing where to leave capital, and the 57 assessments vendored here say what is currently checkable about those venues: 50 of 57 are Stage 0 with `UNVERIFIABLE`, meaning a third party cannot recompute the disclosure. That is a fact a solver can cite when picking a hedge venue, and it is the same fact whether the reader is a solver, an agent, or a person.
-
-What NEAR contributes to this, and what it does not:
-
-- **Contributes:** the record is readable with a `view` call, with no account, no key and no payment (step 1 above is exactly that). Any solver, in any language, can read the same 32 bytes that a judge reads. A hosted API can rate-limit, go down, or change its answer; a `view` call at a block height cannot.
-- **Contributes:** a named account such as `por-digest-anchor.ardmere-demo-1fc2.testnet` is checkable by reading it, not by trusting a hex string.
-- **Does not contribute:** chain signatures and Intents move assets out of NEAR; they do not let another chain read this record. There is no trustless path for Ethereum to read NEAR state today, so this is a NEAR-side reference, not a cross-chain feed.
-- **Does not contribute:** the record does not verify reserves and does not make any exchange's disclosure recomputable. It records how much is checkable.
-
-The chain is not what makes a solver safer. It is where the measurement about hedge venues can be read by anyone who needs it, without asking permission.
 
 ## Tracks
 
