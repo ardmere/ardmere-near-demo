@@ -18,6 +18,9 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT / "scripts"))
+from por_snapshot import build_anchor_args  # noqa: E402
+
 DIGESTS = ROOT / "fixtures" / "digests.json"
 ALLOWED_NETWORKS = {"testnet"}
 VIEW_TIMEOUT = 120
@@ -65,6 +68,8 @@ def extract_record(text):
 
 def find_record(node):
     if isinstance(node, dict):
+        if "assessment_sha256" in node and "exchange" in node and "artifact_bundle_root" in node:
+            return node
         if "assessment_sha256" in node and "exchange" in node:
             return node
         for value in node.values():
@@ -91,11 +96,13 @@ def view_get(contract, network, exchange, snapshot_id):
     record = extract_record(proc.stdout)
     if record is not None:
         return record, False, ""
-    if proc.returncode != 0 and "digest not found" in text:
-        return None, True, "digest not found"
+    if proc.returncode != 0 and (
+        "snapshot not found" in text or "digest not found" in text
+    ):
+        return None, True, "snapshot not found"
     if proc.returncode != 0:
         raise NearError(f"view get failed: {text.strip()[:400]}")
-    return None, False, "view returned no DigestRecord"
+    return None, False, "view returned no SnapshotRecord"
 
 
 def point_latest(contract, network, exchange, snapshot_id):
@@ -110,15 +117,18 @@ def point_latest(contract, network, exchange, snapshot_id):
         raise NearError(f"point_latest failed for {exchange} {snapshot_id}:\n{proc.stdout}{proc.stderr}")
 
 
-def anchor(contract, network, row):
-    args = {
-        "exchange": row["exchange"],
-        "snapshot_id": str(row["snapshotId"]),
-        "assessment_sha256": row["sha256"],
-        "por_stage": row["porStage"],
-        "effective_por": bool(row["effectivePor"]),
-        "methodology_version": row["methodologyVersion"],
-    }
+def load_assessment(path):
+    try:
+        return json.loads(path.read_text())
+    except (OSError, json.JSONDecodeError) as exc:
+        raise NearError(f"cannot read {path}: {exc}")
+
+
+def anchor(contract, network, assessment, assessment_sha256):
+    try:
+        args = build_anchor_args(assessment, assessment_sha256)
+    except ValueError as exc:
+        raise NearError(str(exc))
     cmd = [
         "near", "contract", "call-function", "as-transaction", contract, "anchor",
         "json-args", json.dumps(args), "prepaid-gas", "80 Tgas", "attached-deposit", "0 NEAR",
@@ -126,7 +136,9 @@ def anchor(contract, network, row):
     ]
     proc = run_near(cmd, SEND_TIMEOUT)
     if proc.returncode != 0:
-        raise NearError(f"anchor failed for {row['exchange']} {row['snapshotId']}:\n{proc.stdout}{proc.stderr}")
+        raise NearError(
+            f"anchor failed for {args['exchange']} {args['snapshot_id']}:\n{proc.stdout}{proc.stderr}"
+        )
     return proc.stdout
 
 
@@ -141,6 +153,15 @@ def normalize_hex(value):
     return text
 
 
+def same_integrity(record, args):
+    return (
+        normalize_hex(record.get("assessment_sha256")) == args["assessment_sha256"]
+        and normalize_hex(record.get("artifact_bundle_root")) == args["artifact_bundle_root"]
+        and normalize_hex(record.get("verification_bundle_root")) == args["verification_bundle_root"]
+        and normalize_hex(record.get("exchange_merkle_root")) == args["exchange_merkle_root"]
+    )
+
+
 def load_digests():
     try:
         doc = json.loads(DIGESTS.read_text())
@@ -153,10 +174,7 @@ def load_digests():
 
 
 def assessment_fields(path):
-    try:
-        assessment = json.loads(path.read_text())
-    except (OSError, json.JSONDecodeError) as exc:
-        raise NearError(f"cannot read {path}: {exc}")
+    assessment = load_assessment(path)
     snapshot = assessment.get("snapshot") or {}
     exchange = assessment.get("exchange")
     snapshot_id = snapshot.get("id")
@@ -189,7 +207,7 @@ def cmd_get(opts):
     else:
         doc["note"] = (
             f"No get view for {exchange} {snapshot_id} on {network} ({detail})."
-            if missing else f"View returned no DigestRecord for {exchange} {snapshot_id}."
+            if missing else f"View returned no SnapshotRecord for {exchange} {snapshot_id}."
         )
     json.dump(doc, sys.stdout, indent=2)
     sys.stdout.write("\n")
@@ -227,16 +245,21 @@ def cmd_reconcile(opts):
             problems.append(f"{label}: fixtures/digests.json is missing effectivePor")
         if len(problems) != before:
             continue
+        try:
+            assessment = load_assessment(path)
+            args = build_anchor_args(assessment, file_sha)
+        except (NearError, ValueError) as exc:
+            problems.append(f"{label}: {exc}")
+            continue
         record, missing, detail = view_get(opts.contract, network, row["exchange"], str(row["snapshotId"]))
         if record is not None:
-            on_chain = normalize_hex(record.get("assessment_sha256"))
-            if on_chain == file_sha:
+            if same_integrity(record, args):
                 print(f"ok       {label}: already anchored with the same bytes")
                 skipped += 1
             else:
                 problems.append(
-                    f"{label}: on-chain sha256 {on_chain} differs from {file_sha}; "
-                    "refusing to overwrite an anchored digest"
+                    f"{label}: on-chain record differs from assessment roots/digest; "
+                    "refusing to overwrite an anchored snapshot"
                 )
             continue
         if not missing:
@@ -245,7 +268,7 @@ def cmd_reconcile(opts):
         if not opts.apply:
             print(f"would anchor {label} ({file_sha})")
             continue
-        anchor(opts.contract, network, row)
+        anchor(opts.contract, network, assessment, file_sha)
         print(f"anchored {label} ({file_sha})")
         anchored += 1
     if opts.apply and not problems:

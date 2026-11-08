@@ -26,7 +26,8 @@ Read the `near` block to see where the view came from:
 | `near.network` | `testnet` for the live contract, `sandbox` for the recording |
 | `near.live` | `true` only when a view call answered in this run |
 | `near.contract` | the account the `get` was sent to |
-| `near.matches` | whether the on-chain sha256 equals the file sha256 |
+| `near.matches` | whether the on-chain `assessment_sha256` equals the file sha256 |
+| `near` record | schema v4 `SnapshotRecord`: also carries `artifact_bundle_root`, `verification_bundle_root`, `exchange_merkle_root`, `por_stage` (0–3), coverage bps |
 
 With `POR_NEAR_CONTRACT` unset, the script falls back to the sandbox recording in `fixtures/near-views.json`. That recording is a replay, not chain state; say so if you quote a score from it.
 

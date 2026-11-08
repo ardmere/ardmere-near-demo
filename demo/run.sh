@@ -204,6 +204,8 @@ import hashlib, json, sys
 from pathlib import Path
 root = Path(sys.argv[1])
 work = Path(sys.argv[2])
+sys.path.insert(0, str(root / "scripts"))
+from por_snapshot import build_anchor_args
 digests = json.loads((root / "fixtures/digests.json").read_text())
 files = [(root / row["path"]) for row in digests["assessments"]]
 listed = {row["path"] for row in digests["assessments"]}
@@ -216,15 +218,9 @@ for path in files:
         raise SystemExit(f"sha256 mismatch for {rel}")
     found.add(rel)
     assessment = json.loads(path.read_text())
-    args = {
-        "exchange": assessment["exchange"],
-        "snapshot_id": str(assessment["snapshot"]["id"]),
-        "assessment_sha256": digest,
-        "por_stage": assessment["porStage"],
-        "effective_por": bool(assessment["effectivePoR"]),
-        "methodology_version": assessment["methodologyVersion"],
-    }
-    (work / "args" / f"{assessment['exchange']}.json").write_text(json.dumps(args))
+    args = build_anchor_args(assessment, digest)
+    name = f"{args['exchange']}-{args['snapshot_id']}.json"
+    (work / "args" / name).write_text(json.dumps(args))
 if found != listed:
     raise SystemExit(f"assessment set {found} != digests.json {listed}")
 print("fixture sha256 matches digests.json")
@@ -240,6 +236,29 @@ for args in "$WORKDIR"/args/*.json; do
     sign-with-legacy-keychain \
     send
 done
+
+python3 - "$ROOT" "$WORKDIR/latest.jsonl" <<'PY'
+import json, sys
+from pathlib import Path
+root = Path(sys.argv[1])
+out = Path(sys.argv[2])
+digests = json.loads((root / "fixtures/digests.json").read_text())
+newest = {}
+for row in digests["assessments"]:
+    newest[row["exchange"]] = str(row["snapshotId"])
+out.write_text("".join(json.dumps({"exchange": e, "snapshot_id": s}) + "\n" for e, s in sorted(newest.items())))
+PY
+while IFS= read -r latest; do
+  [ -z "$latest" ] && continue
+  echo "point_latest $latest"
+  timeout 120 "${NEAR[@]}" contract call-function as-transaction "$CONTRACT" point_latest json-args "$latest" \
+    prepaid-gas '30 Tgas' \
+    attached-deposit '0 NEAR' \
+    sign-as "$CONTRACT" \
+    network-config sandbox \
+    sign-with-legacy-keychain \
+    send
+done < "$WORKDIR/latest.jsonl"
 
 python3 - "$ROOT" "$WORKDIR/calls.txt" <<'PY'
 import json, sys
@@ -298,7 +317,7 @@ for obj in reversed(found):
     if result is not None:
         break
 if result is None:
-    raise SystemExit("view call did not return a DigestRecord:\n" + text)
+    raise SystemExit("view call did not return a SnapshotRecord:\n" + text)
 record = {"method": call["method"], "args": call["args"], "result": result}
 with open(sys.argv[3], "a") as handle:
     handle.write(json.dumps(record) + "\n")
