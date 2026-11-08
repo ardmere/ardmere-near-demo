@@ -53,4 +53,11 @@ fn get_latest_follows_the_newest_snapshot() {
     set_context("owner.sandbox", 4);
     anchor(&mut contract, "okx", "newer", &"22".repeat(32), "Stage 1", true);
     assert_eq!(contract.get_latest("okx".to_string()).snapshot_id, "newer");
+    set_context("owner.sandbox", 5);
+    anchor(&mut contract, "okx", "older", &"11".repeat(32), "Stage 1", true);
+    assert_eq!(contract.get_latest("okx".to_string()).snapshot_id, "newer");
+    contract.point_latest("okx".to_string(), "older".to_string());
+    assert_eq!(contract.get_latest("okx".to_string()).snapshot_id, "older");
+    contract.point_latest("okx".to_string(), "newer".to_string());
+    assert_eq!(contract.get_latest("okx".to_string()).snapshot_id, "newer");
 }
