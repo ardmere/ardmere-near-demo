@@ -2,6 +2,8 @@
 
 ## What this gives NEAR
 
+Ardmere gives NEAR Intents solvers a framework and data to assess CEX custodial risk, and anchors each PoR snapshot on NEAR so verification rests on a consistent on-chain digest.
+
 A NEAR Intents solver is a principal, not a matcher. Its own terms of use put it plainly: the solver "provides and maintains its own Liquidity, at its own cost and under its own control" and "bears all market, inventory, hedging, network, execution, and settlement risk as principal" ([Solver Terms of Use](https://docs.near-intents.org/integration/market-makers/solver-terms-of-use), §7.1 and §7.4).
 
 Filling an intent leaves the solver holding the asset the user sold. It quotes slightly worse than the price it can get by selling that asset elsewhere, and keeps the difference as spread. The venue it sells into is usually a centralized exchange, because that is where depth and latency are. Industry write-ups of intent-based market making describe CEXs as "the primary hedging layer" that "introduces custodial risk and a single point of failure" ([ChainScore](https://chainscorelabs.com/blog/trading/intent-based-architectures/inventory-risk-for-market-makers), [Flip](https://flipdex.co/notes/solver-economics)).
