@@ -2,6 +2,10 @@ name: upstream-check
 
 # Detects drift between the vendored ardmere assessments and fixtures/digests.json.
 # No chain access, no keys. Opening a PR is a report, not a publish.
+#
+# Two different questions, so two jobs:
+#   pull_request        does the manifest match the submodule commit this branch pins?
+#   schedule/dispatch   has upstream main moved, and what would the manifest look like?
 
 on:
   schedule:
@@ -11,14 +15,32 @@ on:
     paths:
       - "fixtures/digests.json"
       - "scripts/upstream_check.py"
+      - ".github/workflows/upstream-check.yml"
 
 permissions:
-  contents: write
-  pull-requests: write
+  contents: read
 
 jobs:
-  drift:
+  pinned:
+    # A pull request must be consistent with its own submodule pointer. Advancing
+    # the submodule here would fail every PR that touches the manifest, because
+    # upstream always has assessments the branch does not list yet.
+    if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Manifest must match the pinned submodule
+        run: python3 scripts/upstream_check.py
+
+  upstream:
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
     steps:
       - uses: actions/checkout@v4
         with:
@@ -34,7 +56,7 @@ jobs:
         continue-on-error: true
         run: python3 scripts/upstream_check.py
 
-      - name: Refresh the manifest and open a PR
+      - name: Refresh the manifest and push a branch
         if: steps.report.outcome == 'failure'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -46,13 +68,27 @@ jobs:
           git add fixtures/digests.json vendor/ardmere.github.io
           git commit -m "chore: follow upstream ardmere assessments"
           git push --force origin cursor/upstream-sync
+
+      - name: Open the pull request
+        id: pr
+        if: steps.report.outcome == 'failure'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
           gh pr create --base main --head cursor/upstream-sync \
             --title "Follow upstream ardmere assessments" \
-            --body "Automated drift check. Review the changed hashes before merging; merging this does not anchor anything. The anchor workflow runs after merge." \
-            || gh pr edit cursor/upstream-sync --title "Follow upstream ardmere assessments"
+            --body "Automated drift check. Review the changed hashes before merging; merging this does not anchor anything. The anchor workflow runs after merge."
 
-      - name: Fail the job when drift is unresolved
+      - name: Say what is left to do
         if: steps.report.outcome == 'failure'
         run: |
-          echo "drift detected; see the cursor/upstream-sync PR" >&2
+          if [ "${{ steps.pr.outcome }}" = "success" ]; then
+            echo "drift detected; review the cursor/upstream-sync pull request" >&2
+          else
+            echo "drift detected and pushed to cursor/upstream-sync, but the pull request could not be opened." >&2
+            echo "The workflow token cannot create pull requests unless the repository setting" >&2
+            echo "Settings -> Actions -> General -> Allow GitHub Actions to create and approve pull requests is enabled." >&2
+            echo "Open the pull request from that branch, or enable the setting." >&2
+          fi
           exit 1
