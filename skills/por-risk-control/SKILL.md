@@ -1,6 +1,6 @@
 ---
 name: por-risk-control
-description: Score CEX custody risk from a public Proof-of-Reserves assessment, its sha256, and a NEAR digest view. Use when an agent needs a 0–100 custody risk score before a person decides whether a CEX venue is acceptable. Does not place orders, hold keys, call NEAR Intents, or decide the trade.
+description: Score CEX custody risk from a public Proof-of-Reserves assessment, its sha256, and a NEAR digest view. Use when a user asks for an exchange's latest PoR snapshot time, a multi-month PoR summary, or a 0–100 custody risk score before choosing a CEX hedge venue. Does not place orders, hold keys, call NEAR Intents, or decide the trade.
 ---
 
 # PoR risk control
@@ -14,10 +14,32 @@ Run the script and read the JSON. Use `riskScore`, `riskLevel`, and `factors`. T
 Set `POR_NEAR_CONTRACT` to the deployed testnet account. The view comes from a live `get` call, not from a recording:
 
 ```bash
-POR_NEAR_CONTRACT=por-digest-anchor.ardmere-demo-1fc2.testnet \
+POR_NEAR_CONTRACT=por-digest-v4-index.ardmere-demo-1fc2.testnet \
   skills/por-risk-control/scripts/por-check.sh \
   vendor/ardmere.github.io/docs/reports/okx/508756245-assessment.json
 ```
+
+Default live testnet contract when unset in examples: `por-digest-v4-index.ardmere-demo-1fc2.testnet`.
+
+## Exchange questions (latest time, recent months)
+
+When the user asks **when the latest PoR was published** or to **evaluate recent PoR reports** for one exchange, run from the repo root (after `git clone --recurse-submodules`):
+
+```bash
+POR_NEAR_CONTRACT=por-digest-v4-index.ardmere-demo-1fc2.testnet \
+  python3 skills/por-risk-control/scripts/por-exchange-report.py binance
+
+POR_NEAR_CONTRACT=por-digest-v4-index.ardmere-demo-1fc2.testnet \
+  python3 skills/por-risk-control/scripts/por-exchange-report.py binance --months 3
+```
+
+The script calls `get_latest` on chain for the latest snapshot time and id, then runs `por-check.sh` on each assessment in `fixtures/digests.json` for that exchange within the window. Answer in plain language:
+
+- **Publish time** means the assessment `snapshotTime` (exchange snapshot UTC), confirmed by the chain record's `snapshot_time` for `get_latest`.
+- **Scores** describe how far the public disclosure is from third-party recompute (`UNVERIFIABLE`, stage, flags). They do not prove reserves.
+- Say when every row shows `near.matches: true` (file hash equals on-chain `assessment_sha256`).
+
+Add `--json` when another tool consumes the output.
 
 Read the `near` block to see where the view came from:
 
