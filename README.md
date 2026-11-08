@@ -6,6 +6,48 @@ NEAR stores the sha256 of each listed assessment. A view call returns the same 3
 
 One contract stores the digest. One skill turns the public flags into a 0–100 score of how far a snapshot is from being recomputable. One page shows that score beside the file hash and the NEAR view.
 
+## Try it in three steps
+
+Judges and machines: these run from a fresh clone, in order, with no account and no key.
+
+**Step 1 — read the on-chain record.** No clone, no toolchain, no credentials. This is a `view` call to NEAR testnet through the public RPC:
+
+```bash
+curl -sS -X POST https://rpc.testnet.fastnear.com \
+  -H 'Content-Type: application/json' \
+  -d '{"jsonrpc":"2.0","id":"1","method":"query","params":{
+        "request_type":"call_function","finality":"final",
+        "account_id":"por-digest-anchor.ardmere-demo-1fc2.testnet",
+        "method_name":"get_latest",
+        "args_base64":"eyJleGNoYW5nZSI6Im9reCJ9"}}'
+```
+
+Expected: a `result.result` array that decodes to `{"exchange":"okx","snapshot_id":"508756245","assessment_sha256":"708b8b8a…ef9a0","por_stage":"Stage 1",…}`. `args_base64` is the base64 of `{"exchange":"okx"}`.
+
+**Step 2 — hash the file the digest claims to cover.** After `git clone --recurse-submodules` (see [Baseline](#baseline)):
+
+```bash
+sha256sum vendor/ardmere.github.io/docs/reports/okx/508756245-assessment.json
+```
+
+Expected: `708b8b8aa6a8178df04bcbc2714d0ff8323e37f274f309edc8bc670c377ef9a0`, the same hex Step 1 returned. That is the whole claim: the bytes you hashed are the bytes the chain names.
+
+**Step 3 — score it, against the chain rather than a recording.**
+
+```bash
+POR_NEAR_CONTRACT=por-digest-anchor.ardmere-demo-1fc2.testnet \
+  skills/por-risk-control/scripts/por-check.sh \
+  vendor/ardmere.github.io/docs/reports/okx/508756245-assessment.json
+```
+
+Expected: JSON with `"riskScore": 10`, `"riskLevel": "low"`, and `"near": {"live": true, "matches": true, ...}`. `live: true` means the `get` came from the contract in this run, not from `fixtures/near-views.json`.
+
+Swap the file for any row in `fixtures/digests.json` to score another exchange; all 57 listed snapshots are anchored on the same contract.
+
+### What a judge cannot conclude
+
+Step 2 proves the chain names the same bytes as the file. It does not prove the exchange holds reserves. See `THESIS.md` for the claim, what argues against it, and what result would drop it.
+
 ## Baseline
 
 Assessment JSON comes from the **git submodule** [`vendor/ardmere.github.io`](https://github.com/ardmere/ardmere.github.io), pinned to the same baseline commit as `fixtures/digests.json` (`sourceCommit`). `fixtures/digests.json` lists every `*-assessment.json` in that submodule, so every exchange the upstream repo has published can be scored and, once anchored, read back with `get` / `get_latest`. The registry and the Ethereum Sepolia anchor stay in that repo. This repo is the NEAR slice plus the skill and dashboard.
@@ -19,6 +61,22 @@ git submodule update --init --recursive
 ```
 
 To move the submodule to a newer upstream commit, update the checkout under `vendor/ardmere.github.io`, refresh `fixtures/digests.json` paths and sha256 entries, then commit both the submodule pointer and this repo.
+
+### Hackathon baseline disclosure
+
+The assessment methodology and the assessment JSON are **pre-existing work**, not built here. They live in [`ardmere/ardmere.github.io`](https://github.com/ardmere/ardmere.github.io), which also holds the registry and the Ethereum Sepolia anchor. This repo pins that work as a submodule and does not modify it.
+
+This repository's own history starts at 2026-11-05, inside the hackathon window, so every commit here falls in the judged period. The first commit imported the NEAR demo from a branch of `ardmere.github.io`, and the import is disclosed here rather than presented as new authorship: the contract, the scoring script, the dashboard and `demo/run.sh` arrived in that import, and were then extended in this repo.
+
+Changes made in this repo after the import:
+
+- `scripts/near_digest.py`, `scripts/upstream_check.py` — testnet publishing and drift checks.
+- `skills/por-risk-control/scripts/inclusion_check.py` and `tests/` — local verification of a user's own inclusion proof.
+- `contracts/por_digest_anchor` — `point_latest`, and the tests that pin `get_latest` behaviour.
+- `.github/workflows/` — the two pipelines.
+- The manifest now covers every assessment the submodule pins (57 across 19 exchanges), and all of them are anchored on testnet.
+
+Baseline, not judged as new work: the upstream assessments, the PoR Stage methodology, and the Ethereum Sepolia anchor in `ardmere.github.io`. No third-party libraries are vendored into `src`; the contract depends on `near-sdk` from crates.io, and the Python tests use only the standard library.
 
 ## Cursor: `por-risk-control` skill
 
@@ -80,6 +138,30 @@ Merging the sync PR is a human decision about which snapshots this demo vouches 
 ## Reading live versus sandbox
 
 `fixtures/near-views.json` is a sandbox recording. With `POR_NEAR_CONTRACT` unset, the skill reads that file; the `near.live` field is `false`. Set `POR_NEAR_CONTRACT` to a testnet account and the `get` comes from the chain with `near.live` `true`. Quote which one produced a number before quoting the number.
+
+## What this gives NEAR
+
+A NEAR Intents solver is a principal, not a matcher. Its own terms of use put it plainly: the solver "provides and maintains its own Liquidity, at its own cost and under its own control" and "bears all market, inventory, hedging, network, execution, and settlement risk as principal" ([Solver Terms of Use](https://docs.near-intents.org/integration/market-makers/solver-terms-of-use), §7.1 and §7.4).
+
+Filling an intent leaves the solver holding the asset the user sold. It quotes slightly worse than the price it can get by selling that asset elsewhere, and keeps the difference as spread. The venue it sells into is usually a centralized exchange, because that is where depth and latency are. Industry write-ups of intent-based market making describe CEXs as "the primary hedging layer" that "introduces custodial risk and a single point of failure" ([ChainScore](https://chainscorelabs.com/blog/trading/intent-based-architectures/inventory-risk-for-market-makers), [Flip](https://flipdex.co/notes/solver-economics)).
+
+So the solver carries two exposures, and only one of them is on chain:
+
+| Stage | Exposure | Does a reserve assessment help? |
+| --- | --- | --- |
+| User ↔ solver | none: the swap settles atomically, or it refunds | no |
+| Solver ↔ exchange, when hedging | **custodial**: the solver's own capital sits at the venue | **yes** |
+
+The second one is why a reserve assessment has a reader in this ecosystem. A solver choosing where to hedge is choosing where to leave capital, and the 57 assessments vendored here say what is currently checkable about those venues: 50 of 57 are Stage 0 with `UNVERIFIABLE`, meaning a third party cannot recompute the disclosure. That is a fact a solver can cite when picking a hedge venue, and it is the same fact whether the reader is a solver, an agent, or a person.
+
+What NEAR contributes to this, and what it does not:
+
+- **Contributes:** the record is readable with a `view` call, with no account, no key and no payment (step 1 above is exactly that). Any solver, in any language, can read the same 32 bytes that a judge reads. A hosted API can rate-limit, go down, or change its answer; a `view` call at a block height cannot.
+- **Contributes:** a named account such as `por-digest-anchor.ardmere-demo-1fc2.testnet` is checkable by reading it, not by trusting a hex string.
+- **Does not contribute:** chain signatures and Intents move assets out of NEAR; they do not let another chain read this record. There is no trustless path for Ethereum to read NEAR state today, so this is a NEAR-side reference, not a cross-chain feed.
+- **Does not contribute:** the record does not verify reserves and does not make any exchange's disclosure recomputable. It records how much is checkable.
+
+The chain is not what makes a solver safer. It is where the measurement about hedge venues can be read by anyone who needs it, without asking permission.
 
 ## Tracks
 
