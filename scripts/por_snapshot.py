@@ -30,7 +30,7 @@ def decode_por_stage(value: Any) -> str:
         return f"unknown({value})"
 
 
-def normalize_root(value: Any, *, allow_empty: bool = True) -> str:
+def normalize_root(value: Any, *, allow_empty: bool = True, allow_invalid: bool = False) -> str:
     if value is None:
         return "0" * 64 if allow_empty else ""
     text = str(value).strip().lower()
@@ -39,6 +39,8 @@ def normalize_root(value: Any, *, allow_empty: bool = True) -> str:
     if text == "" and allow_empty:
         return "0" * 64
     if len(text) != 64 or any(c not in "0123456789abcdef" for c in text):
+        if allow_invalid:
+            return "0" * 64
         raise ValueError(f"invalid 32-byte hex root: {value!r}")
     return text
 
@@ -109,7 +111,9 @@ def build_anchor_args(assessment: dict, assessment_sha256: str) -> dict:
         raise ValueError("assessment is missing methodologyVersion")
     artifact_root = normalize_root(artifacts.get("artifactBundleRoot"), allow_empty=False)
     verification_root = normalize_root(artifacts.get("verificationBundleRoot"), allow_empty=False)
-    exchange_root = normalize_root(snapshot.get("exchangeMerkleRoot"), allow_empty=True)
+    exchange_root = normalize_root(
+        snapshot.get("exchangeMerkleRoot"), allow_empty=True, allow_invalid=True
+    )
     verdict_summary, coverage_bps = summarize_verifications(assessment.get("verifierResults"))
     if "coverageBps" in assessment:
         coverage_bps = as_u16(assessment.get("coverageBps"), coverage_bps)
