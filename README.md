@@ -6,6 +6,48 @@ NEAR stores the sha256 of each listed assessment. A view call returns the same 3
 
 One contract stores the digest. One skill turns the public flags into a 0–100 score of how far a snapshot is from being recomputable. One page shows that score beside the file hash and the NEAR view.
 
+## Try it in three steps
+
+Judges and machines: these run from a fresh clone, in order, with no account and no key.
+
+**Step 1 — read the on-chain record.** No clone, no toolchain, no credentials. This is a `view` call to NEAR testnet through the public RPC:
+
+```bash
+curl -sS -X POST https://rpc.testnet.fastnear.com \
+  -H 'Content-Type: application/json' \
+  -d '{"jsonrpc":"2.0","id":"1","method":"query","params":{
+        "request_type":"call_function","finality":"final",
+        "account_id":"por-digest-anchor.ardmere-demo-1fc2.testnet",
+        "method_name":"get_latest",
+        "args_base64":"eyJleGNoYW5nZSI6Im9reCJ9"}}'
+```
+
+Expected: a `result.result` array that decodes to `{"exchange":"okx","snapshot_id":"508756245","assessment_sha256":"708b8b8a…ef9a0","por_stage":"Stage 1",…}`. `args_base64` is the base64 of `{"exchange":"okx"}`.
+
+**Step 2 — hash the file the digest claims to cover.** After `git clone --recurse-submodules` (see [Baseline](#baseline)):
+
+```bash
+sha256sum vendor/ardmere.github.io/docs/reports/okx/508756245-assessment.json
+```
+
+Expected: `708b8b8aa6a8178df04bcbc2714d0ff8323e37f274f309edc8bc670c377ef9a0`, the same hex Step 1 returned. That is the whole claim: the bytes you hashed are the bytes the chain names.
+
+**Step 3 — score it, against the chain rather than a recording.**
+
+```bash
+POR_NEAR_CONTRACT=por-digest-anchor.ardmere-demo-1fc2.testnet \
+  skills/por-risk-control/scripts/por-check.sh \
+  vendor/ardmere.github.io/docs/reports/okx/508756245-assessment.json
+```
+
+Expected: JSON with `"riskScore": 10`, `"riskLevel": "low"`, and `"near": {"live": true, "matches": true, ...}`. `live: true` means the `get` came from the contract in this run, not from `fixtures/near-views.json`.
+
+Swap the file for any row in `fixtures/digests.json` to score another exchange; all 57 listed snapshots are anchored on the same contract.
+
+### What a judge cannot conclude
+
+Step 2 proves the chain names the same bytes as the file. It does not prove the exchange holds reserves. See `THESIS.md` for the claim, what argues against it, and what result would drop it.
+
 ## Baseline
 
 Assessment JSON comes from the **git submodule** [`vendor/ardmere.github.io`](https://github.com/ardmere/ardmere.github.io), pinned to the same baseline commit as `fixtures/digests.json` (`sourceCommit`). `fixtures/digests.json` lists every `*-assessment.json` in that submodule, so every exchange the upstream repo has published can be scored and, once anchored, read back with `get` / `get_latest`. The registry and the Ethereum Sepolia anchor stay in that repo. This repo is the NEAR slice plus the skill and dashboard.
@@ -19,6 +61,22 @@ git submodule update --init --recursive
 ```
 
 To move the submodule to a newer upstream commit, update the checkout under `vendor/ardmere.github.io`, refresh `fixtures/digests.json` paths and sha256 entries, then commit both the submodule pointer and this repo.
+
+### Hackathon baseline disclosure
+
+The assessment methodology and the assessment JSON are **pre-existing work**, not built here. They live in [`ardmere/ardmere.github.io`](https://github.com/ardmere/ardmere.github.io), which also holds the registry and the Ethereum Sepolia anchor. This repo pins that work as a submodule and does not modify it.
+
+This repository's own history starts at 2026-11-05, inside the hackathon window, so every commit here falls in the judged period. The first commit imported the NEAR demo from a branch of `ardmere.github.io`, and the import is disclosed here rather than presented as new authorship: the contract, the scoring script, the dashboard and `demo/run.sh` arrived in that import, and were then extended in this repo.
+
+Changes made in this repo after the import:
+
+- `scripts/near_digest.py`, `scripts/upstream_check.py` — testnet publishing and drift checks.
+- `skills/por-risk-control/scripts/inclusion_check.py` and `tests/` — local verification of a user's own inclusion proof.
+- `contracts/por_digest_anchor` — `point_latest`, and the tests that pin `get_latest` behaviour.
+- `.github/workflows/` — the two pipelines.
+- The manifest now covers every assessment the submodule pins (57 across 19 exchanges), and all of them are anchored on testnet.
+
+Baseline, not judged as new work: the upstream assessments, the PoR Stage methodology, and the Ethereum Sepolia anchor in `ardmere.github.io`. No third-party libraries are vendored into `src`; the contract depends on `near-sdk` from crates.io, and the Python tests use only the standard library.
 
 ## Cursor: `por-risk-control` skill
 
