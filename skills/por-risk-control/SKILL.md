@@ -49,7 +49,9 @@ Read the `near` block to see where the view came from:
 | `near.live` | `true` only when a view call answered in this run |
 | `near.contract` | the account the `get` was sent to |
 | `near.matches` | whether the on-chain `assessment_sha256` equals the file sha256 |
-| `near` record | schema v4 `SnapshotRecord`: also carries `artifact_bundle_root`, `verification_bundle_root`, `exchange_merkle_root`, `por_stage` (0–3), coverage bps |
+| `near` record | schema v5 `SnapshotRecord`: roots, `por_stage` (0–3), coverage bps, and `custody_risk_score` (0–100, or 255 = inconclusive) |
+| `near.custodyRiskScore` | same uint8 as on chain |
+| `scoringSource` | `onchain` when the score is read from `custody_risk_score`; otherwise `recomputed` from the assessment file |
 
 With `POR_NEAR_CONTRACT` unset, the script falls back to the sandbox recording in `fixtures/near-views.json`. That recording is a replay, not chain state; say so if you quote a score from it.
 
@@ -68,6 +70,13 @@ This skill only reads. Anchoring a new snapshot is a separate, owner-signed step
 ```bash
 python3 scripts/near_digest.py --contract <contract.testnet> reconcile          # dry run
 python3 scripts/near_digest.py --contract <contract.testnet> reconcile --apply  # send
+```
+
+After upgrading the contract to schema v5, backfill scores on snapshots that were anchored as v4:
+
+```bash
+python3 scripts/near_digest.py --contract <contract.testnet> backfill-custody          # dry run
+python3 scripts/near_digest.py --contract <contract.testnet> backfill-custody --apply  # send
 ```
 
 The reconciliation is idempotent: bytes already on chain are skipped, different bytes fail instead of overwriting. `scripts/upstream_check.py` reports drift between the submodule and the manifest and never touches NEAR.

@@ -39,50 +39,6 @@ import os
 import sys
 from pathlib import Path
 
-BLOCKING = {
-    "UNVERIFIABLE": 40,
-    "LOGIN_WALL": 40,
-    "SAMPLE_ONLY": 40,
-    "BLACK_BOX_INCLUSION_PROOF": 40,
-}
-NONBLOCKING = {
-    "STAGE_BLOCKED": 8,
-    "NO_WALLET_OWNERSHIP_PROOF": 8,
-    "OPAQUE_TRUSTED_SETUP": 8,
-    "BUSINESS_CONSTRAINT_GAP": 8,
-    "NEGATIVE_NET_WORTH_DUMMY_USER_RISK": 8,
-    "IMPLEMENTATION_SEMANTICS_RISK": 8,
-    "HIGH_FRICTION_INCLUSION_PROOF": 5,
-    "NO_INDEPENDENT_REVIEW": 5,
-    "NO_CANONICAL_ANCHOR": 5,
-    "CONFLICT_OF_INTEREST_UNDISCLOSED": 5,
-    "HIGH_FREQUENCY_GAP": 5,
-}
-SEVERITY_FALLBACK = {
-    "critical": 10,
-    "high": 8,
-    "medium": 5,
-    "low": 2,
-    "info": 1,
-}
-NONBLOCKING_CAP = 20
-RANK = {"low": 0, "medium": 1, "high": 2, "critical": 3}
-
-
-def band(score):
-    if score >= 80:
-        return "critical"
-    if score >= 50:
-        return "high"
-    if score >= 25:
-        return "medium"
-    return "low"
-
-
-def at_least(level, floor):
-    return level if RANK[level] >= RANK[floor] else floor
-
-
 def normalize_hex(value):
     if not isinstance(value, str):
         return None
@@ -92,31 +48,6 @@ def normalize_hex(value):
     if len(text) != 64 or any(c not in "0123456789abcdef" for c in text):
         return None
     return text
-
-
-def stage_below(stage):
-    if not isinstance(stage, str):
-        return False
-    text = stage.strip()
-    lowered = text.lower()
-    if lowered == "pre-stage" or lowered.startswith(("pre-stage ", "pre-stage-", "pre-stage—")):
-        return True
-    return text == "Stage 0" or text.startswith(("Stage 0 ", "Stage 0-", "Stage 0—"))
-
-
-def cap_sum(factors, limit):
-    total = sum(item["delta"] for item in factors)
-    if total <= limit:
-        return
-    overflow = total - limit
-    for item in reversed(factors):
-        if overflow <= 0:
-            break
-        cut = min(item["delta"], overflow)
-        if cut:
-            item["delta"] -= cut
-            overflow -= cut
-            item["note"] = (item["note"] + " Score capped at 100.").strip()
 
 
 def load_json(path):
@@ -180,6 +111,9 @@ def integrity(factor_id, note, exchange, snapshot, stage, effective, flags, file
 
 def score(assessment_path):
     root = Path(os.environ["POR_ROOT"])
+    sys.path.insert(0, str(root / "scripts"))
+    from risk_score import CUSTODY_RISK_INCONCLUSIVE, band, decode_on_chain_score, score_from_assessment
+
     digests_path = os.environ.get("POR_DIGESTS") or ""
     near_path = os.environ.get("POR_NEAR_VIEWS") or ""
     path = Path(assessment_path)
@@ -233,6 +167,7 @@ def score(assessment_path):
         "contract": near_doc.get("contract") if isinstance(near_doc, dict) else None,
         "matches": None,
         "assessmentSha256": near_sha,
+        "custodyRiskScore": result.get("custody_risk_score") if isinstance(result, dict) else None,
     }
     if near_present and file_sha and near_sha:
         near_obj["matches"] = near_sha == file_sha
@@ -322,56 +257,51 @@ def score(assessment_path):
             near_obj,
         )
 
-    factors = []
-    saw_blocking = False
-    for flag in flag_rows:
-        if not isinstance(flag, dict):
-            continue
-        flag_id = flag.get("id")
-        if flag_id not in BLOCKING:
-            continue
-        saw_blocking = True
-        factors.append({
-            "id": flag_id,
-            "delta": BLOCKING[flag_id],
-            "note": flag.get("message") or "Blocking high flag.",
-        })
-    if stage_below(stage):
-        factors.append({
-            "id": "STAGE_BELOW_EFFECTIVE_POR",
-            "delta": 35,
-            "note": f"porStage is {stage}, below effective PoR.",
-        })
-    nonblocking_added = 0
-    for flag in flag_rows:
-        if not isinstance(flag, dict):
-            continue
-        flag_id = flag.get("id")
-        if not isinstance(flag_id, str) or flag_id in BLOCKING:
-            continue
-        full = NONBLOCKING.get(flag_id)
-        if full is None:
-            full = SEVERITY_FALLBACK.get(str(flag.get("severity") or "").lower(), 5)
-        room = NONBLOCKING_CAP - nonblocking_added
-        applied = min(full, max(room, 0))
-        note = flag.get("message") or "Non-blocking flag."
-        if applied < full:
-            note = f"{note} Non-blocking contribution capped at 20."
-        factors.append({"id": flag_id, "delta": applied, "note": note})
-        nonblocking_added += applied
+    assessment_dict = assessment if isinstance(assessment, dict) else {}
+    local = score_from_assessment(assessment_dict)
+    scoring_source = "recomputed"
+    risk_score = local["riskScore"]
+    level = local["riskLevel"]
+    factors = local["factors"]
+    conclusive = True
 
-    cap_sum(factors, 100)
-    risk_score = sum(item["delta"] for item in factors)
-    level = band(risk_score)
-    if saw_blocking:
-        level = at_least(level, "high")
-    if stage_below(stage):
-        level = at_least(level, "medium")
-    return {
+    if isinstance(result, dict) and near_sha == file_sha and "custody_risk_score" in result:
+        raw = result.get("custody_risk_score")
+        if raw == CUSTODY_RISK_INCONCLUSIVE:
+            conclusive = False
+            scoring_source = "onchain"
+            return {
+                "exchange": exchange,
+                "snapshot": snapshot,
+                "riskScore": None,
+                "riskLevel": None,
+                "conclusive": False,
+                "scoringSource": scoring_source,
+                "factors": [{
+                    "id": "NEAR_CUSTODY_INCONCLUSIVE",
+                    "delta": None,
+                    "note": "On-chain custody_risk_score is 255 (inconclusive).",
+                }],
+                "porStage": stage,
+                "effectivePoR": effective,
+                "riskFlags": flags,
+                "assessmentSha256": file_sha,
+                "digestsSha256": digests_sha,
+                "near": near_obj,
+            }
+        chain_score, chain_ok = decode_on_chain_score(raw)
+        if chain_ok and chain_score is not None:
+            scoring_source = "onchain"
+            risk_score = chain_score
+            level = band(risk_score)
+
+    out = {
         "exchange": exchange,
         "snapshot": snapshot,
         "riskScore": risk_score,
         "riskLevel": level,
+        "conclusive": conclusive,
+        "scoringSource": scoring_source,
         "factors": factors,
         "porStage": stage,
         "effectivePoR": effective,
@@ -380,6 +310,9 @@ def score(assessment_path):
         "digestsSha256": digests_sha,
         "near": near_obj,
     }
+    if scoring_source == "onchain" and risk_score != local["riskScore"]:
+        out["recomputedRiskScore"] = local["riskScore"]
+    return out
 
 
 result = score(sys.argv[1])

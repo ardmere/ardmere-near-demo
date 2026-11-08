@@ -29,6 +29,16 @@ class PorSnapshot(unittest.TestCase):
         self.assertEqual(len(args["artifact_bundle_root"]), 64)
         self.assertEqual(len(args["verification_bundle_root"]), 64)
         self.assertNotEqual(args["artifact_bundle_root"], "0" * 64)
+        self.assertEqual(args["custody_risk_score"], 10)
+
+    def test_kucoin_assessment_packs_custody_risk_score(self):
+        path = ROOT / "vendor/ardmere.github.io/docs/reports/kucoin/20261031-assessment.json"
+        if not path.is_file():
+            self.skipTest("submodule missing")
+        assessment = json.loads(path.read_text())
+        digest = hashlib.sha256(path.read_bytes()).hexdigest()
+        args = build_anchor_args(assessment, digest)
+        self.assertEqual(args["custody_risk_score"], 75)
 
 
 if __name__ == "__main__":
