@@ -28,12 +28,11 @@ Sepolia-style reads on NEAR (keccak hex tags/ids, no governance):
 
 | Sepolia | NEAR |
 | --- | --- |
-| `getSnapshot(snapshotId)` | `get_snapshot` — `snapshot_id_hash` = keccak256(utf8 audit id), 64 hex |
+| `getSnapshot(snapshotId)` | `get_snapshot` — `exchange_tag` + `snapshot_id_hash` (keccak256 utf8 audit id); tag scopes ids that repeat across exchanges |
+| `snapshotExists` | `snapshot_exists` — same two-part key |
 | `getLatestSnapshot(exchangeTag)` | `get_latest_snapshot` — `exchange_tag` = keccak256(utf8 exchange) |
 | `getSnapshotByPeriod(exchangeTag, periodSeq)` | `get_snapshot_by_period` — only when `period_seq > 0` in the assessment |
 | `getSnapshotCount` / `getSnapshotIdAt` | `get_snapshot_count` / `get_snapshot_id_at` |
-| `snapshotExists` | `snapshot_exists` |
-
 Demo manifest pointer (which snapshot is “current” for scoring) stays `get_latest` + `point_latest` after reconcile.
 
 **Step 2 — hash the file the digest claims to cover.** After `git clone --recurse-submodules` (see [Baseline](#baseline)):
