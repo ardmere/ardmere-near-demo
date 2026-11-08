@@ -8,11 +8,24 @@ A NEAR Intents solver is a principal, not a matcher. Its own terms of use put it
 
 Filling an intent leaves the solver holding the asset the user sold. It quotes slightly worse than the price it can get by selling that asset elsewhere, and keeps the difference as spread. The venue it sells into is usually a centralized exchange, because that is where depth and latency are. Industry write-ups of intent-based market making describe CEXs as "the primary hedging layer" that "introduces custodial risk and a single point of failure" ([ChainScore](https://chainscorelabs.com/blog/trading/intent-based-architectures/inventory-risk-for-market-makers), [Flip](https://flipdex.co/notes/solver-economics)).
 
-When hedging, the solver's own capital sits at the venue. That custodial exposure is why a reserve assessment has a reader here. A solver choosing where to hedge is choosing where to leave capital, and the 57 assessments vendored in this repo say what is currently checkable about those venues: 50 of 57 are Stage 0 with `UNVERIFIABLE`, meaning a third party cannot recompute the disclosure. That is a fact a solver can cite when picking a hedge venue — the same fact whether the reader is a solver, an agent, or a person.
+So the solver carries two exposures, and only one of them is on chain:
 
-Ardmere anchors the sha256 of each exchange-published snapshot on NEAR (`por-digest-anchor.ardmere-demo-1fc2.testnet`). Anyone verifying a hedge venue can hash the local assessment file and compare it to that on-chain digest — without calling the exchange's API. An exchange API can rate-limit, go down, or change its answer; the anchored digest at a block height cannot.
+| Stage | Exposure | Does a reserve assessment help? |
+| --- | --- | --- |
+| User ↔ solver | none: the swap settles atomically, or it refunds | no |
+| Solver ↔ exchange, when hedging | **custodial**: the solver's own capital sits at the venue | **yes** |
 
-The chain is not what makes a solver safer. It is an independent place to check what a venue published, without asking that venue for permission.
+The second one is why a reserve assessment has a reader here. A solver choosing where to hedge is choosing where to leave capital, and the 57 assessments vendored in this repo say what is currently checkable about those venues: 50 of 57 are Stage 0 with `UNVERIFIABLE`, meaning a third party cannot recompute the disclosure. That is a fact a solver can cite when picking a hedge venue — the same fact whether the reader is a solver, an agent, or a person.
+
+Ardmere anchors the sha256 of each exchange-published snapshot on NEAR (`por-digest-v4-index.ardmere-demo-1fc2.testnet`). Anyone verifying a hedge venue can hash the local assessment file and compare it to that on-chain digest — without calling the exchange's API.
+
+What NEAR contributes to this, and what it does not:
+
+- **Contributes:** the record is readable with a `view` call, with no account, no key and no payment ([step 1](#try-it-in-three-steps) below is exactly that). A hosted API can rate-limit, go down, or change its answer; a `view` call at a block height cannot.
+- **Contributes:** a named account such as `por-digest-v4-index.ardmere-demo-1fc2.testnet` is checkable by reading it, not by trusting a hex string.
+- **Does not contribute:** the record does not verify reserves and does not make any exchange's disclosure recomputable. It records how much is checkable.
+
+The chain is not what makes a solver safer. It is where the measurement about hedge venues can be read by anyone who needs it, without asking permission.
 
 ---
 
@@ -33,24 +46,14 @@ curl -sS -X POST https://rpc.testnet.fastnear.com \
   -H 'Content-Type: application/json' \
   -d '{"jsonrpc":"2.0","id":"1","method":"query","params":{
         "request_type":"call_function","finality":"final",
-        "account_id":"por-digest-anchor.ardmere-demo-1fc2.testnet",
+        "account_id":"por-digest-v4-index.ardmere-demo-1fc2.testnet",
         "method_name":"get_latest",
         "args_base64":"eyJleGNoYW5nZSI6Im9reCJ9"}}'
 ```
 
-Expected: a `result.result` array that decodes to a Sepolia-aligned `SnapshotRecord` such as `{"exchange":"okx","snapshot_id":"508756245","assessment_sha256":"708b8b8a…ef9a0","artifact_bundle_root":"b92ad031…","verification_bundle_root":"78585399…","por_stage":2,"schema_version":4,…}` (`por_stage` 2 = Stage 1). `args_base64` is the base64 of `{"exchange":"okx"}`.
+Expected: a `result.result` array that decodes to a `SnapshotRecord` such as `{"exchange":"okx","snapshot_id":"508756245","assessment_sha256":"708b8b8a…ef9a0","artifact_bundle_root":"b92ad031…","verification_bundle_root":"78585399…","por_stage":2,"schema_version":4,…}` (`por_stage` 2 = Stage 1). `args_base64` is the base64 of `{"exchange":"okx"}`.
 
-Sepolia-style reads on NEAR (keccak hex tags/ids, no governance):
-
-| Sepolia | NEAR |
-| --- | --- |
-| `getSnapshot(snapshotId)` | `get_snapshot` — `snapshot_id_hash` = keccak256(utf8 audit id), 64 hex |
-| `getLatestSnapshot(exchangeTag)` | `get_latest_snapshot` — `exchange_tag` = keccak256(utf8 exchange) |
-| `getSnapshotByPeriod(exchangeTag, periodSeq)` | `get_snapshot_by_period` — only when `period_seq > 0` in the assessment |
-| `getSnapshotCount` / `getSnapshotIdAt` | `get_snapshot_count` / `get_snapshot_id_at` |
-| `snapshotExists` | `snapshot_exists` |
-
-Demo manifest pointer (which snapshot is “current” for scoring) stays `get_latest` + `point_latest` after reconcile.
+Other read-only methods on the same contract include `get` (exchange + snapshot id), `get_snapshot_count`, `get_snapshot_id_at`, and `get_snapshot` (exchange tag + snapshot id hash). After `near_digest.py reconcile --apply`, `point_latest` sets which snapshot `get_latest` returns for scoring.
 
 **Step 2 — hash the file the digest claims to cover.** After `git clone --recurse-submodules` (see [Baseline](#baseline)):
 
@@ -63,7 +66,7 @@ Expected: `708b8b8aa6a8178df04bcbc2714d0ff8323e37f274f309edc8bc670c377ef9a0`, th
 **Step 3 — score it, against the chain rather than a recording.**
 
 ```bash
-POR_NEAR_CONTRACT=por-digest-anchor.ardmere-demo-1fc2.testnet \
+POR_NEAR_CONTRACT=por-digest-v4-index.ardmere-demo-1fc2.testnet \
   skills/por-risk-control/scripts/por-check.sh \
   vendor/ardmere.github.io/docs/reports/okx/508756245-assessment.json
 ```
@@ -78,7 +81,7 @@ Step 2 proves the chain names the same bytes as the file. It does not prove the 
 
 ## Baseline
 
-Assessment JSON comes from the **git submodule** [`vendor/ardmere.github.io`](https://github.com/ardmere/ardmere.github.io), pinned to the same baseline commit as `fixtures/digests.json` (`sourceCommit`). `fixtures/digests.json` lists every `*-assessment.json` in that submodule, so every exchange the upstream repo has published can be scored and, once anchored, read back with `get` / `get_latest`. The registry and the Ethereum Sepolia anchor stay in that repo. This repo is the NEAR slice plus the skill and dashboard.
+Assessment JSON comes from the **git submodule** [`vendor/ardmere.github.io`](https://github.com/ardmere/ardmere.github.io), pinned to the same baseline commit as `fixtures/digests.json` (`sourceCommit`). `fixtures/digests.json` lists every `*-assessment.json` in that submodule, so every exchange the upstream repo has published can be scored and, once anchored, read back with `get` / `get_latest`. The upstream assessment registry stays in that repo. This repo is the NEAR slice plus the skill and dashboard.
 
 Clone with submodules:
 
@@ -92,7 +95,7 @@ To move the submodule to a newer upstream commit, update the checkout under `ven
 
 ### Hackathon baseline disclosure
 
-The assessment methodology and the assessment JSON are **pre-existing work**, not built here. They live in [`ardmere/ardmere.github.io`](https://github.com/ardmere/ardmere.github.io), which also holds the registry and the Ethereum Sepolia anchor. This repo pins that work as a submodule and does not modify it.
+The assessment methodology and the assessment JSON are **pre-existing work**, not built here. They live in [`ardmere/ardmere.github.io`](https://github.com/ardmere/ardmere.github.io), which also holds the assessment registry. This repo pins that work as a submodule and does not modify it.
 
 This repository's own history starts at 2026-11-05, inside the hackathon window, so every commit here falls in the judged period. The first commit imported the NEAR demo from a branch of `ardmere.github.io`, and the import is disclosed here rather than presented as new authorship: the contract, the scoring script, the dashboard and `demo/run.sh` arrived in that import, and were then extended in this repo.
 
@@ -104,7 +107,7 @@ Changes made in this repo after the import:
 - `.github/workflows/` — the two pipelines.
 - The manifest now covers every assessment the submodule pins (57 across 19 exchanges), and all of them are anchored on testnet.
 
-Baseline, not judged as new work: the upstream assessments, the PoR Stage methodology, and the Ethereum Sepolia anchor in `ardmere.github.io`. No third-party libraries are vendored into `src`; the contract depends on `near-sdk` from crates.io, and the Python tests use only the standard library.
+Baseline, not judged as new work: the upstream assessments and the PoR Stage methodology in `ardmere.github.io`. No third-party libraries are vendored into `src`; the contract depends on `near-sdk` from crates.io, and the Python tests use only the standard library.
 
 ## Cursor: `por-risk-control` skill
 
@@ -112,10 +115,15 @@ This repo ships a symlink so Cursor can discover the skill in place:
 
 - `.cursor/skills/por-risk-control` → `skills/por-risk-control` (same `SKILL.md` and `scripts/` as the CLI)
 
-Open this folder as the workspace root in Cursor; the agent can use it when you ask for a custody risk score from a public assessment file. The runnable check remains:
+Open this folder as the workspace root in Cursor; the agent can use it when you ask for a custody risk score, the latest PoR snapshot time for an exchange, or a multi-month summary. Runnable checks:
 
 ```bash
-skills/por-risk-control/scripts/por-check.sh vendor/ardmere.github.io/docs/reports/okx/508756245-assessment.json
+POR_NEAR_CONTRACT=por-digest-v4-index.ardmere-demo-1fc2.testnet \
+  skills/por-risk-control/scripts/por-check.sh \
+  vendor/ardmere.github.io/docs/reports/okx/508756245-assessment.json
+
+POR_NEAR_CONTRACT=por-digest-v4-index.ardmere-demo-1fc2.testnet \
+  python3 skills/por-risk-control/scripts/por-exchange-report.py binance --months 3
 ```
 
 ## Checking your own inclusion proof
@@ -161,7 +169,7 @@ Two workflows wire this up:
 - `.github/workflows/upstream-check.yml` runs nightly, advances the submodule in the CI checkout, and opens `cursor/upstream-sync` when a listed assessment changed. No secrets.
 - `.github/workflows/anchor-testnet.yml` runs on `main` when the manifest or the submodule pointer moves, and anchors only what testnet is missing. It needs `vars.NEAR_CONTRACT_ID` and `secrets.NEAR_TESTNET_OWNER_KEY`, writes the key to a temporary keychain, and deletes it afterwards.
 
-Merging the sync PR is a human decision about which snapshots this demo vouches for, and it is what triggers anchoring. The demo therefore becomes the publisher of the NEAR records it serves; the upstream repo stays the source of the assessments and the Sepolia anchor.
+Merging the sync PR is a human decision about which snapshots this demo vouches for, and it is what triggers anchoring. The demo therefore becomes the publisher of the NEAR records it serves; the upstream repo stays the source of the assessments.
 
 ## Reading live versus sandbox
 

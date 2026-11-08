@@ -52,7 +52,7 @@ pub struct SnapshotRecord {
 pub struct Contract {
     owner: AccountId,
     records: HashMap<String, SnapshotRecord>,
-    /// snapshot_id_hash (64 hex) → record_key(exchange, snapshot_id)
+    /// (exchange_tag, snapshot_id_hash) → record_key(exchange, snapshot_id)
     by_snapshot_id_hash: HashMap<String, String>,
     /// Manifest / demo pointer: plaintext exchange → snapshot_id
     latest: HashMap<String, String>,
@@ -159,18 +159,21 @@ impl Contract {
         self.register_indices(&record, &key);
     }
 
-    /// Whether a snapshot exists (Sepolia snapshotExists), keyed by keccak256(auditId).
-    pub fn snapshot_exists(&self, snapshot_id_hash: String) -> bool {
+    /// Whether a snapshot exists, scoped by exchange tag and keccak256(auditId).
+    /// Audit ids may repeat across exchanges in the vendored assessments; Sepolia
+    /// assumes globally unique audit ids, so NEAR requires `exchange_tag` here.
+    pub fn snapshot_exists(&self, exchange_tag: String, snapshot_id_hash: String) -> bool {
+        let tag = require_hex32("exchange_tag", &exchange_tag);
         let hash = require_hex32("snapshot_id_hash", &snapshot_id_hash);
-        self.by_snapshot_id_hash.contains_key(&hash)
+        self.by_snapshot_id_hash
+            .contains_key(&tagged_snapshot_hash_key(&tag, &hash))
     }
 
-    /// Fetch one snapshot by keccak256(auditId) (Sepolia getSnapshot).
-    pub fn get_snapshot(&self, snapshot_id_hash: String) -> SnapshotRecord {
-        self.record_by_snapshot_id_hash(&require_hex32(
-            "snapshot_id_hash",
-            &snapshot_id_hash,
-        ))
+    /// Fetch one snapshot by exchange tag and keccak256(auditId).
+    pub fn get_snapshot(&self, exchange_tag: String, snapshot_id_hash: String) -> SnapshotRecord {
+        let tag = require_hex32("exchange_tag", &exchange_tag);
+        let hash = require_hex32("snapshot_id_hash", &snapshot_id_hash);
+        self.record_by_tagged_snapshot_id_hash(&tag, &hash)
     }
 
     /// Most recently anchored snapshot for an exchange tag (Sepolia getLatestSnapshot).
@@ -180,7 +183,7 @@ impl Contract {
             Some(value) => value.clone(),
             None => env::panic_str("snapshot not found"),
         };
-        self.record_by_snapshot_id_hash(&snapshot_id_hash)
+        self.record_by_tagged_snapshot_id_hash(&tag, &snapshot_id_hash)
     }
 
     /// Fetch a snapshot by exchange tag and period sequence (Sepolia getSnapshotByPeriod).
@@ -191,7 +194,7 @@ impl Contract {
             Some(value) => value.clone(),
             None => env::panic_str("snapshot not found"),
         };
-        self.record_by_snapshot_id_hash(&snapshot_id_hash)
+        self.record_by_tagged_snapshot_id_hash(&tag, &snapshot_id_hash)
     }
 
     /// Number of anchored snapshots for an exchange tag (Sepolia getSnapshotCount).
@@ -248,11 +251,12 @@ impl Contract {
     fn register_indices(&mut self, record: &SnapshotRecord, record_key: &str) {
         let tag = record.exchange_tag.clone();
         let snapshot_id_hash = record.snapshot_id_hash.clone();
-        if self.by_snapshot_id_hash.contains_key(&snapshot_id_hash) {
-            env::panic_str("snapshot id hash already anchored");
+        let tagged_hash = tagged_snapshot_hash_key(&tag, &snapshot_id_hash);
+        if self.by_snapshot_id_hash.contains_key(&tagged_hash) {
+            env::panic_str("snapshot id hash already anchored for this exchange");
         }
         self.by_snapshot_id_hash
-            .insert(snapshot_id_hash.clone(), record_key.to_string());
+            .insert(tagged_hash, record_key.to_string());
         self.snapshot_ids
             .entry(tag.clone())
             .or_default()
@@ -272,8 +276,15 @@ impl Contract {
         }
     }
 
-    fn record_by_snapshot_id_hash(&self, snapshot_id_hash: &str) -> SnapshotRecord {
-        let record_key = match self.by_snapshot_id_hash.get(snapshot_id_hash) {
+    fn record_by_tagged_snapshot_id_hash(
+        &self,
+        exchange_tag: &str,
+        snapshot_id_hash: &str,
+    ) -> SnapshotRecord {
+        let record_key = match self
+            .by_snapshot_id_hash
+            .get(&tagged_snapshot_hash_key(exchange_tag, snapshot_id_hash))
+        {
             Some(value) => value,
             None => env::panic_str("snapshot not found"),
         };
@@ -296,6 +307,10 @@ fn record_key(exchange: &str, snapshot_id: &str) -> String {
 
 fn period_map_key(exchange_tag: &str, period_seq: u32) -> String {
     format!("{exchange_tag}{PERIOD_KEY_SEP}{period_seq}")
+}
+
+fn tagged_snapshot_hash_key(exchange_tag: &str, snapshot_id_hash: &str) -> String {
+    format!("{exchange_tag}{KEY_SEP}{snapshot_id_hash}")
 }
 
 fn require_hex32(name: &str, value: &str) -> String {
@@ -610,8 +625,13 @@ mod tests {
         let second = contract.get_snapshot_id_at(tag.clone(), 1);
         assert_eq!(first, keccak_hex(b"older"));
         assert_eq!(second, keccak_hex(b"newer"));
-        assert!(contract.snapshot_exists(second.clone()));
-        assert_eq!(contract.get_snapshot(second.clone()).snapshot_id, "newer");
+        assert!(contract.snapshot_exists(tag.clone(), second.clone()));
+        assert_eq!(
+            contract
+                .get_snapshot(tag.clone(), second.clone())
+                .snapshot_id,
+            "newer"
+        );
         assert_eq!(contract.get_latest_snapshot(tag.clone()).snapshot_id, "newer");
         assert_eq!(contract.get_snapshot_by_period(tag, 5).snapshot_id, "older");
     }
