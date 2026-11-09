@@ -175,8 +175,6 @@ def roots_match(record, args):
 
 
 def needs_custody_backfill(record, args):
-    if not roots_match(record, args):
-        return False
     on_chain = record.get("custody_risk_score")
     if on_chain is None:
         return True
@@ -371,11 +369,11 @@ def cmd_backfill_custody(opts):
         if record is None:
             problems.append(f"{label}: {detail}")
             continue
-        if not needs_custody_backfill(record, args):
-            print(f"ok       {label}: custody_risk_score already {args['custody_risk_score']}")
-            continue
         if not roots_match(record, args):
             problems.append(f"{label}: roots/digest differ; refusing custody backfill")
+            continue
+        if not needs_custody_backfill(record, args):
+            print(f"ok       {label}: custody_risk_score already {args['custody_risk_score']}")
             continue
         if not opts.apply:
             print(
