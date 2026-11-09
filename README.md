@@ -53,7 +53,7 @@ curl -sS -X POST https://rpc.testnet.fastnear.com \
 
 Expected: a `result.result` array that decodes to a `SnapshotRecord` such as `{"exchange":"okx","snapshot_id":"508756245","assessment_sha256":"708b8b8a…ef9a0","artifact_bundle_root":"b92ad031…","verification_bundle_root":"78585399…","por_stage":2,"schema_version":4,…}` (`por_stage` 2 = Stage 1). `args_base64` is the base64 of `{"exchange":"okx"}`.
 
-Other read-only methods on the same contract include `get` (exchange + snapshot id), `get_snapshot_count`, `get_snapshot_id_at`, and `get_snapshot` (exchange tag + snapshot id hash). After `near_digest.py reconcile --apply`, `point_latest` sets which snapshot `get_latest` returns for scoring.
+Other read-only methods on the same contract include `get` (exchange + plaintext audit id), `expected_snapshot_id` (Sepolia v6 `expectedSnapshotId` = `keccak256(lowercase exchange ++ 0x00 ++ auditId)`), `get_snapshot_count`, `get_snapshot_id_at`, and `get_snapshot` (exchange tag + snapshot id hash — accepts composite or legacy `keccak256(auditId)`). Each row in `fixtures/digests.json` carries `expectedSnapshotId` for cross-checks; `scripts/snapshot_id.py` computes the same value offline. After `near_digest.py reconcile --apply`, `point_latest` sets which snapshot `get_latest` returns for scoring.
 
 **Step 2 — hash the file the digest claims to cover.** After `git clone --recurse-submodules` (see [Baseline](#baseline)):
 

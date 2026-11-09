@@ -8,7 +8,7 @@ At `ardmere/ardmere.github.io` commit `e4400bd` the submodule holds 57 assessmen
 
 `fixtures/digests.json` lists all 57 of those assessments, every exchange the upstream repo publishes at that commit. Anyone can sha256 a listed file and compare it to the manifest. `get_latest` is pointed at the newest snapshot by `snapshotTime` for each exchange.
 
-`por_digest_anchor` stores a Sepolia-aligned snapshot record under `(exchange, snapshot_id)`: the assessment sha256 plus the same bundle roots, stage, coverage, and timing fields as `ArdmerePoRAnchor` schema v4. `get` and `get_latest` return it. The same call works in a local NEAR sandbox, with no exchange RPC and no custody of funds.
+`por_digest_anchor` stores a Sepolia-aligned snapshot record under `(exchange, snapshot_id)`: the assessment sha256 plus the same bundle roots, stage, coverage, and timing fields as `ArdmerePoRAnchor` schema v4/v6. New anchors set `snapshot_id_hash` to the v6 composite `expectedSnapshotId` (`keccak256` of lowercase exchange, `0x00`, audit id); Sepolia-style queries still accept legacy audit-only hashes until testnet rows are re-anchored. `get` and `get_latest` return the record. The same call works in a local NEAR sandbox, with no exchange RPC and no custody of funds.
 
 `skills/por-risk-control/scripts/por-check.sh` reads one file, checks the hash, and prints `riskScore`, `riskLevel`, and `factors`. The dashboard shows that score next to the file hash and the view result.
 

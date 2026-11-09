@@ -11,7 +11,8 @@
       "effectivePor": false,
       "methodologyVersion": "por-transparency-framework@2026-07-01",
       "snapshotTime": "2026-04-01T00:00:00Z",
-      "reportUrl": "https://ardmere.github.io/docs/reports/binance/PR01APR26-transparency-report.html"
+      "reportUrl": "https://ardmere.github.io/docs/reports/binance/PR01APR26-transparency-report.html",
+      "expectedSnapshotId": "42dc2b634c35fbb3d8e7a4b9c1ab0d4a14cb52ab8dd7a59800cb742ee146e1de"
     },
     {
       "path": "vendor/ardmere.github.io/docs/reports/binance/PR01MAY26-assessment.json",
@@ -22,7 +23,8 @@
       "effectivePor": false,
       "methodologyVersion": "por-transparency-framework@2026-07-01",
       "snapshotTime": "2026-05-01T00:00:00Z",
-      "reportUrl": "https://ardmere.github.io/docs/reports/binance/PR01MAY26-transparency-report.html"
+      "reportUrl": "https://ardmere.github.io/docs/reports/binance/PR01MAY26-transparency-report.html",
+      "expectedSnapshotId": "34a878747caa6c672c8c936574e8a4b09877995450c08b275077a3b992159812"
     },
     {
       "path": "vendor/ardmere.github.io/docs/reports/binance/PR01JUN26-assessment.json",
@@ -33,7 +35,8 @@
       "effectivePor": false,
       "methodologyVersion": "por-transparency-framework@2026-07-01",
       "snapshotTime": "2026-06-01T00:00:00Z",
-      "reportUrl": "https://ardmere.github.io/docs/reports/binance/PR01JUN26-transparency-report.html"
+      "reportUrl": "https://ardmere.github.io/docs/reports/binance/PR01JUN26-transparency-report.html",
+      "expectedSnapshotId": "544dc09355f17317297f73f41d2b505838a9fa148be4e0a63809fbc6daee14cd"
     },
     {
       "path": "vendor/ardmere.github.io/docs/reports/binance/PR01JUL26-assessment.json",
@@ -44,7 +47,8 @@
       "effectivePor": false,
       "methodologyVersion": "por-transparency-framework@2026-07-01",
       "snapshotTime": "2026-07-01T00:00:00Z",
-      "reportUrl": "https://ardmere.github.io/docs/reports/binance/PR01JUL26-transparency-report.html"
+      "reportUrl": "https://ardmere.github.io/docs/reports/binance/PR01JUL26-transparency-report.html",
+      "expectedSnapshotId": "6c87b2683ed678202f9a938fb13fbac86ba651640630167b277c89b5bdbdb877"
     },
     {
       "path": "vendor/ardmere.github.io/docs/reports/binance/PR01AUG26-assessment.json",
@@ -55,7 +59,8 @@
       "effectivePor": false,
       "methodologyVersion": "por-transparency-framework@2026-07-01",
       "snapshotTime": "2026-08-01T00:00:00Z",
-      "reportUrl": "https://ardmere.github.io/docs/reports/binance/PR01AUG26-transparency-report.html"
+      "reportUrl": "https://ardmere.github.io/docs/reports/binance/PR01AUG26-transparency-report.html",
+      "expectedSnapshotId": "395f81e1c851f7270d7e7d55b2ac650a08da006197ad31dbc1568c1b9aec4fe9"
     },
     {
       "path": "vendor/ardmere.github.io/docs/reports/binance/PR01SEP26-assessment.json",
@@ -66,7 +71,8 @@
       "effectivePor": false,
       "methodologyVersion": "por-transparency-framework@2026-07-01",
       "snapshotTime": "2026-09-01T00:00:00Z",
-      "reportUrl": "https://ardmere.github.io/docs/reports/binance/PR01SEP26-transparency-report.html"
+      "reportUrl": "https://ardmere.github.io/docs/reports/binance/PR01SEP26-transparency-report.html",
+      "expectedSnapshotId": "6f1bd8cbc0e6074d14fd651c4813063c83cd26d5898774c00eb7345e975d2b0a"
     },
     {
       "path": "vendor/ardmere.github.io/docs/reports/binance/PR01OCT26-assessment.json",
@@ -77,7 +83,8 @@
       "effectivePor": false,
       "methodologyVersion": "por-transparency-framework@2026-07-01",
       "snapshotTime": "2026-10-01T00:00:00Z",
-      "reportUrl": "https://ardmere.github.io/docs/reports/binance/PR01OCT26-transparency-report.html"
+      "reportUrl": "https://ardmere.github.io/docs/reports/binance/PR01OCT26-transparency-report.html",
+      "expectedSnapshotId": "c698c0dd87f862f130e6250ba17b14352f90c0ef12eae4d4d4399f10362005f7"
     },
     {
       "path": "vendor/ardmere.github.io/docs/reports/binance/PR31OCT26-assessment.json",
@@ -88,7 +95,8 @@
       "effectivePor": false,
       "methodologyVersion": "por-transparency-framework@2026-07-01",
       "snapshotTime": "2026-10-31T00:00:00Z",
-      "reportUrl": "https://ardmere.github.io/docs/reports/binance/PR31OCT26-transparency-report.html"
+      "reportUrl": "https://ardmere.github.io/docs/reports/binance/PR31OCT26-transparency-report.html",
+      "expectedSnapshotId": "3f8662c1120f8d1a4ce025c7916376e3a9cf9e6749d2248c26500a603eea6178"
     },
     {
       "path": "vendor/ardmere.github.io/docs/reports/binance/PR04NOV26-assessment.json",
@@ -99,7 +107,8 @@
       "effectivePor": false,
       "methodologyVersion": "por-transparency-framework@2026-07-01",
       "snapshotTime": "2026-11-04T00:00:00Z",
-      "reportUrl": "https://ardmere.github.io/docs/reports/binance/PR04NOV26-transparency-report.html"
+      "reportUrl": "https://ardmere.github.io/docs/reports/binance/PR04NOV26-transparency-report.html",
+      "expectedSnapshotId": "8f69d9a060188505883fecb6b54ea29b716b1fe58221fc6bf4868aaedd7f8720"
     },
     {
       "path": "vendor/ardmere.github.io/docs/reports/bingx/20260815-assessment.json",
@@ -110,7 +119,8 @@
       "effectivePor": false,
       "methodologyVersion": "por-transparency-framework@2026-07-01",
       "snapshotTime": "2026-08-15T00:00:00Z",
-      "reportUrl": "https://ardmere.github.io/docs/reports/bingx/20260815-transparency-report.html"
+      "reportUrl": "https://ardmere.github.io/docs/reports/bingx/20260815-transparency-report.html",
+      "expectedSnapshotId": "af2de1081cbb29f1b1389bb9709ed13ef11877f9fc85bc64a6a1812b320fe9d8"
     },
     {
       "path": "vendor/ardmere.github.io/docs/reports/bingx/20260915-assessment.json",
@@ -121,7 +131,8 @@
       "effectivePor": false,
       "methodologyVersion": "por-transparency-framework@2026-07-01",
       "snapshotTime": "2026-09-15T00:00:00Z",
-      "reportUrl": "https://ardmere.github.io/docs/reports/bingx/20260915-transparency-report.html"
+      "reportUrl": "https://ardmere.github.io/docs/reports/bingx/20260915-transparency-report.html",
+      "expectedSnapshotId": "de5f40dc616a51dd3d1a8195508750dbafc37348114f07a0d429443d1232efb1"
     },
     {
       "path": "vendor/ardmere.github.io/docs/reports/bingx/20261015-assessment.json",
@@ -132,7 +143,8 @@
       "effectivePor": false,
       "methodologyVersion": "por-transparency-framework@2026-07-01",
       "snapshotTime": "2026-10-15T00:00:00Z",
-      "reportUrl": "https://ardmere.github.io/docs/reports/bingx/20261015-transparency-report.html"
+      "reportUrl": "https://ardmere.github.io/docs/reports/bingx/20261015-transparency-report.html",
+      "expectedSnapshotId": "fbe87a23d957ab0434ffc2978d1b764d6c81cfae1681b33a8005c8753106f29a"
     },
     {
       "path": "vendor/ardmere.github.io/docs/reports/bitget/202605-assessment.json",
@@ -143,7 +155,8 @@
       "effectivePor": false,
       "methodologyVersion": "por-transparency-framework@2026-07-01",
       "snapshotTime": "2026-05-27T10:00:00Z",
-      "reportUrl": "https://ardmere.github.io/docs/reports/bitget/202605-transparency-report.html"
+      "reportUrl": "https://ardmere.github.io/docs/reports/bitget/202605-transparency-report.html",
+      "expectedSnapshotId": "d6f3e66b34b796953b533b29d825b5ac7b40f601dd78370599cddb4347a81825"
     },
     {
       "path": "vendor/ardmere.github.io/docs/reports/bitget/202606-assessment.json",
@@ -154,7 +167,8 @@
       "effectivePor": false,
       "methodologyVersion": "por-transparency-framework@2026-07-01",
       "snapshotTime": "2026-06-18T10:00:00Z",
-      "reportUrl": "https://ardmere.github.io/docs/reports/bitget/202606-transparency-report.html"
+      "reportUrl": "https://ardmere.github.io/docs/reports/bitget/202606-transparency-report.html",
+      "expectedSnapshotId": "820493fa5b568657be3c94262e10a4fe6f598323756c8cde6ff9c41cf63c0a9f"
     },
     {
       "path": "vendor/ardmere.github.io/docs/reports/bitget/20260820-assessment.json",
@@ -165,7 +179,8 @@
       "effectivePor": false,
       "methodologyVersion": "por-transparency-framework@2026-07-01",
       "snapshotTime": "2026-08-20T14:00:00Z",
-      "reportUrl": "https://ardmere.github.io/docs/reports/bitget/20260820-transparency-report.html"
+      "reportUrl": "https://ardmere.github.io/docs/reports/bitget/20260820-transparency-report.html",
+      "expectedSnapshotId": "a9951825230099376b7b46fa40b21b850b5808b91db6358e2619550d5cd0dcb1"
     },
     {
       "path": "vendor/ardmere.github.io/docs/reports/bitget/20260929-assessment.json",
@@ -176,7 +191,8 @@
       "effectivePor": false,
       "methodologyVersion": "por-transparency-framework@2026-07-01",
       "snapshotTime": "2026-09-29T09:00:00Z",
-      "reportUrl": "https://ardmere.github.io/docs/reports/bitget/20260929-transparency-report.html"
+      "reportUrl": "https://ardmere.github.io/docs/reports/bitget/20260929-transparency-report.html",
+      "expectedSnapshotId": "ba54898deb9d5608938ef0cef5433f08fe7add3ff1defad6e8cde71b44b18cec"
     },
     {
       "path": "vendor/ardmere.github.io/docs/reports/bitget/20261021-assessment.json",
@@ -187,7 +203,8 @@
       "effectivePor": false,
       "methodologyVersion": "por-transparency-framework@2026-07-01",
       "snapshotTime": "2026-10-21T04:00:00Z",
-      "reportUrl": "https://ardmere.github.io/docs/reports/bitget/20261021-transparency-report.html"
+      "reportUrl": "https://ardmere.github.io/docs/reports/bitget/20261021-transparency-report.html",
+      "expectedSnapshotId": "69fe0c353810e4343f5339ec9e29de5dc3ae23df802ae5693e2baa822359c572"
     },
     {
       "path": "vendor/ardmere.github.io/docs/reports/bitunix/20261103-assessment.json",
@@ -198,7 +215,8 @@
       "effectivePor": false,
       "methodologyVersion": "por-transparency-framework@2026-07-01",
       "snapshotTime": "2026-11-03T05:42:40Z",
-      "reportUrl": "https://ardmere.github.io/docs/reports/bitunix/20261103-transparency-report.html"
+      "reportUrl": "https://ardmere.github.io/docs/reports/bitunix/20261103-transparency-report.html",
+      "expectedSnapshotId": "9eaea1e7f69104ea237500878a9d8bdd7830c1e8ddae25f5d287ff3f9280c580"
     },
     {
       "path": "vendor/ardmere.github.io/docs/reports/btcc/20261015-assessment.json",
@@ -209,7 +227,8 @@
       "effectivePor": false,
       "methodologyVersion": "por-transparency-framework@2026-07-01",
       "snapshotTime": "2026-10-15T00:00:00Z",
-      "reportUrl": "https://ardmere.github.io/docs/reports/btcc/20261015-transparency-report.html"
+      "reportUrl": "https://ardmere.github.io/docs/reports/btcc/20261015-transparency-report.html",
+      "expectedSnapshotId": "8433c47cf85de1a59222ea565e1b132cb999b40a69bc78c511e7f54cf01a2e37"
     },
     {
       "path": "vendor/ardmere.github.io/docs/reports/bybit/2025061709-assessment.json",
@@ -220,7 +239,8 @@
       "effectivePor": false,
       "methodologyVersion": "por-transparency-framework@2026-07-01",
       "snapshotTime": "2025-06-17T09:00:00Z",
-      "reportUrl": "https://ardmere.github.io/docs/reports/bybit/2025061709-transparency-report.html"
+      "reportUrl": "https://ardmere.github.io/docs/reports/bybit/2025061709-transparency-report.html",
+      "expectedSnapshotId": "8235a4dc1e63f1c1773a66c3cb5b285bdde143ef8a8d71298bdb4798fd1b1000"
     },
     {
       "path": "vendor/ardmere.github.io/docs/reports/bybit/2026052709-assessment.json",
@@ -231,7 +251,8 @@
       "effectivePor": false,
       "methodologyVersion": "por-transparency-framework@2026-07-01",
       "snapshotTime": "2026-05-27T09:00:00Z",
-      "reportUrl": "https://ardmere.github.io/docs/reports/bybit/2026052709-transparency-report.html"
+      "reportUrl": "https://ardmere.github.io/docs/reports/bybit/2026052709-transparency-report.html",
+      "expectedSnapshotId": "997b97961a23f62b2c64223e0121798f3952cb5432d587901cbe3d94ae2efefc"
     },
     {
       "path": "vendor/ardmere.github.io/docs/reports/bybit/2026082604-assessment.json",
@@ -242,7 +263,8 @@
       "effectivePor": false,
       "methodologyVersion": "por-transparency-framework@2026-07-01",
       "snapshotTime": "2026-08-26T04:00:00Z",
-      "reportUrl": "https://ardmere.github.io/docs/reports/bybit/2026082604-transparency-report.html"
+      "reportUrl": "https://ardmere.github.io/docs/reports/bybit/2026082604-transparency-report.html",
+      "expectedSnapshotId": "da1747438bdd56a261560400564d16e53f62c6851d1fd38b18290708d61bef71"
     },
     {
       "path": "vendor/ardmere.github.io/docs/reports/bybit/2026092303-assessment.json",
@@ -253,7 +275,8 @@
       "effectivePor": false,
       "methodologyVersion": "por-transparency-framework@2026-07-01",
       "snapshotTime": "2026-09-23T03:00:00Z",
-      "reportUrl": "https://ardmere.github.io/docs/reports/bybit/2026092303-transparency-report.html"
+      "reportUrl": "https://ardmere.github.io/docs/reports/bybit/2026092303-transparency-report.html",
+      "expectedSnapshotId": "a148cee71795341d4fc8bce452fa8889c876ced68f8027f4ce1d6d1b6b61015c"
     },
     {
       "path": "vendor/ardmere.github.io/docs/reports/bybit/2026102706-assessment.json",
@@ -264,7 +287,8 @@
       "effectivePor": false,
       "methodologyVersion": "por-transparency-framework@2026-07-01",
       "snapshotTime": "2026-10-27T06:00:00Z",
-      "reportUrl": "https://ardmere.github.io/docs/reports/bybit/2026102706-transparency-report.html"
+      "reportUrl": "https://ardmere.github.io/docs/reports/bybit/2026102706-transparency-report.html",
+      "expectedSnapshotId": "b031e0dbb975592e26d0203d59d5d88b80001b7fbb824f80f902d8ea76b2ca8c"
     },
     {
       "path": "vendor/ardmere.github.io/docs/reports/coinex/20260914-assessment.json",
@@ -275,7 +299,8 @@
       "effectivePor": false,
       "methodologyVersion": "por-transparency-framework@2026-07-01",
       "snapshotTime": "2026-09-14T07:00:00Z",
-      "reportUrl": "https://ardmere.github.io/docs/reports/coinex/20260914-transparency-report.html"
+      "reportUrl": "https://ardmere.github.io/docs/reports/coinex/20260914-transparency-report.html",
+      "expectedSnapshotId": "70aae0fee17b30c361d39fefc37bf70459b739c5d4252a3868403136860edcba"
     },
     {
       "path": "vendor/ardmere.github.io/docs/reports/coinw/202609-assessment.json",
@@ -286,7 +311,8 @@
       "effectivePor": false,
       "methodologyVersion": "por-transparency-framework@2026-07-01",
       "snapshotTime": "2026-09-01T00:00:00Z",
-      "reportUrl": "https://ardmere.github.io/docs/reports/coinw/202609-transparency-report.html"
+      "reportUrl": "https://ardmere.github.io/docs/reports/coinw/202609-transparency-report.html",
+      "expectedSnapshotId": "c17f38d7f7f0d71b1d85a308d016d8721067dc9571d225e8938012973e49030c"
     },
     {
       "path": "vendor/ardmere.github.io/docs/reports/gateio/20260316-assessment.json",
@@ -297,7 +323,8 @@
       "effectivePor": false,
       "methodologyVersion": "por-transparency-framework@2026-07-01",
       "snapshotTime": "2026-03-16T00:00:00Z",
-      "reportUrl": "https://ardmere.github.io/docs/reports/gateio/20260316-transparency-report.html"
+      "reportUrl": "https://ardmere.github.io/docs/reports/gateio/20260316-transparency-report.html",
+      "expectedSnapshotId": "6a4e0019134e45457c35871229fea952562f2847878684a024bb27a6968c4a9e"
     },
     {
       "path": "vendor/ardmere.github.io/docs/reports/gateio/20260618-assessment.json",
@@ -308,7 +335,8 @@
       "effectivePor": false,
       "methodologyVersion": "por-transparency-framework@2026-07-01",
       "snapshotTime": "2026-06-18T00:00:00Z",
-      "reportUrl": "https://ardmere.github.io/docs/reports/gateio/20260618-transparency-report.html"
+      "reportUrl": "https://ardmere.github.io/docs/reports/gateio/20260618-transparency-report.html",
+      "expectedSnapshotId": "2fcd51fdf9dde56fd9887ea0a9ff596ea22b506f4ade7d2d05c9174f851113b1"
     },
     {
       "path": "vendor/ardmere.github.io/docs/reports/gateio/20261018-assessment.json",
@@ -319,7 +347,8 @@
       "effectivePor": false,
       "methodologyVersion": "por-transparency-framework@2026-07-01",
       "snapshotTime": "2026-10-18T00:00:00Z",
-      "reportUrl": "https://ardmere.github.io/docs/reports/gateio/20261018-transparency-report.html"
+      "reportUrl": "https://ardmere.github.io/docs/reports/gateio/20261018-transparency-report.html",
+      "expectedSnapshotId": "33a865f9edc4ebae6bf351e3a197a0fb829bf764f51f01147e1b8d85b1c37028"
     },
     {
       "path": "vendor/ardmere.github.io/docs/reports/htx/20230910-assessment.json",
@@ -330,7 +359,8 @@
       "effectivePor": false,
       "methodologyVersion": "por-transparency-framework@2026-07-01",
       "snapshotTime": "2023-09-10T18:10:33Z",
-      "reportUrl": "https://ardmere.github.io/docs/reports/htx/20230910-transparency-report.html"
+      "reportUrl": "https://ardmere.github.io/docs/reports/htx/20230910-transparency-report.html",
+      "expectedSnapshotId": "5df6d3e9a39199ac70b9f6d9b4aefc88d783a5cefa63534d1b252a9254c8bfb5"
     },
     {
       "path": "vendor/ardmere.github.io/docs/reports/htx/20260801-assessment.json",
@@ -341,7 +371,8 @@
       "effectivePor": false,
       "methodologyVersion": "por-transparency-framework@2026-07-01",
       "snapshotTime": "2026-08-01T00:00:00Z",
-      "reportUrl": "https://ardmere.github.io/docs/reports/htx/20260801-transparency-report.html"
+      "reportUrl": "https://ardmere.github.io/docs/reports/htx/20260801-transparency-report.html",
+      "expectedSnapshotId": "5f98027c00fcb384cde05b63a757d5e14bb86b6860569a02a1af32e26643cd11"
     },
     {
       "path": "vendor/ardmere.github.io/docs/reports/htx/20260901-assessment.json",
@@ -352,7 +383,8 @@
       "effectivePor": false,
       "methodologyVersion": "por-transparency-framework@2026-07-01",
       "snapshotTime": "2026-09-01T00:00:00Z",
-      "reportUrl": "https://ardmere.github.io/docs/reports/htx/20260901-transparency-report.html"
+      "reportUrl": "https://ardmere.github.io/docs/reports/htx/20260901-transparency-report.html",
+      "expectedSnapshotId": "5f712f01a24a7f208fb9462204cc674eb9f840b766979a7f0529e4b29813ab41"
     },
     {
       "path": "vendor/ardmere.github.io/docs/reports/htx/20261001-assessment.json",
@@ -363,7 +395,8 @@
       "effectivePor": false,
       "methodologyVersion": "por-transparency-framework@2026-07-01",
       "snapshotTime": "2026-10-01T00:00:00Z",
-      "reportUrl": "https://ardmere.github.io/docs/reports/htx/20261001-transparency-report.html"
+      "reportUrl": "https://ardmere.github.io/docs/reports/htx/20261001-transparency-report.html",
+      "expectedSnapshotId": "bfe2d91f2736f453320d6dd34016be9f7e35366bd18b18a56599c24abc73af88"
     },
     {
       "path": "vendor/ardmere.github.io/docs/reports/htx/20261101-assessment.json",
@@ -374,7 +407,8 @@
       "effectivePor": false,
       "methodologyVersion": "por-transparency-framework@2026-07-01",
       "snapshotTime": "2026-11-01T00:00:00Z",
-      "reportUrl": "https://ardmere.github.io/docs/reports/htx/20261101-transparency-report.html"
+      "reportUrl": "https://ardmere.github.io/docs/reports/htx/20261101-transparency-report.html",
+      "expectedSnapshotId": "bdbd096d9043bf0b55246ef612e4db87ac27eb5718e8debd15fdd77db30e6f20"
     },
     {
       "path": "vendor/ardmere.github.io/docs/reports/kraken/20260630-assessment.json",
@@ -385,7 +419,8 @@
       "effectivePor": false,
       "methodologyVersion": "por-transparency-framework@2026-07-01",
       "snapshotTime": "2026-06-30T00:00:00Z",
-      "reportUrl": "https://ardmere.github.io/docs/reports/kraken/20260630-transparency-report.html"
+      "reportUrl": "https://ardmere.github.io/docs/reports/kraken/20260630-transparency-report.html",
+      "expectedSnapshotId": "450069dd436680a9ba65720b2a42c335a5d273ff67fe953341f7874f70f1f488"
     },
     {
       "path": "vendor/ardmere.github.io/docs/reports/kucoin/20260630-assessment.json",
@@ -396,7 +431,8 @@
       "effectivePor": false,
       "methodologyVersion": "por-transparency-framework@2026-07-01",
       "snapshotTime": "2026-06-30T15:59:59Z",
-      "reportUrl": "https://ardmere.github.io/docs/reports/kucoin/20260630-transparency-report.html"
+      "reportUrl": "https://ardmere.github.io/docs/reports/kucoin/20260630-transparency-report.html",
+      "expectedSnapshotId": "3266de41f17eac2cd5f86d4302f363e7c16f35a19254b9e596d67fa4db8cf2ae"
     },
     {
       "path": "vendor/ardmere.github.io/docs/reports/kucoin/20260731-assessment.json",
@@ -407,7 +443,8 @@
       "effectivePor": false,
       "methodologyVersion": "por-transparency-framework@2026-07-01",
       "snapshotTime": "2026-07-31T15:59:59Z",
-      "reportUrl": "https://ardmere.github.io/docs/reports/kucoin/20260731-transparency-report.html"
+      "reportUrl": "https://ardmere.github.io/docs/reports/kucoin/20260731-transparency-report.html",
+      "expectedSnapshotId": "60e7ecd4fbfb2d22d43628db97ce1a7e4b013cf51edb1c5a884c448616630651"
     },
     {
       "path": "vendor/ardmere.github.io/docs/reports/kucoin/20260930-assessment.json",
@@ -418,7 +455,8 @@
       "effectivePor": false,
       "methodologyVersion": "por-transparency-framework@2026-07-01",
       "snapshotTime": "2026-09-30T15:59:59Z",
-      "reportUrl": "https://ardmere.github.io/docs/reports/kucoin/20260930-transparency-report.html"
+      "reportUrl": "https://ardmere.github.io/docs/reports/kucoin/20260930-transparency-report.html",
+      "expectedSnapshotId": "dab0ab4fa194d60db0156ec0811b3859226b74717a7a059cb71f7199d9011c33"
     },
     {
       "path": "vendor/ardmere.github.io/docs/reports/kucoin/20261031-assessment.json",
@@ -429,7 +467,8 @@
       "effectivePor": false,
       "methodologyVersion": "por-transparency-framework@2026-07-01",
       "reportUrl": "https://ardmere.github.io/docs/reports/kucoin/20261031-transparency-report.html",
-      "snapshotTime": "2026-10-31T15:59:59Z"
+      "snapshotTime": "2026-10-31T15:59:59Z",
+      "expectedSnapshotId": "bf9d62807a44f40849f0e08dd235fa89d5a40e298a45a4454396cf09f5da59ce"
     },
     {
       "path": "vendor/ardmere.github.io/docs/reports/mexc/202607-assessment.json",
@@ -440,7 +479,8 @@
       "effectivePor": false,
       "methodologyVersion": "por-transparency-framework@2026-07-01",
       "snapshotTime": "2026-07-15T00:00:00Z",
-      "reportUrl": "https://ardmere.github.io/docs/reports/mexc/202607-transparency-report.html"
+      "reportUrl": "https://ardmere.github.io/docs/reports/mexc/202607-transparency-report.html",
+      "expectedSnapshotId": "d97a238b5a197a4fd0c992ed5b446bd2809ca38d2570e868b5822de83259b949"
     },
     {
       "path": "vendor/ardmere.github.io/docs/reports/mexc/202608-assessment.json",
@@ -451,7 +491,8 @@
       "effectivePor": false,
       "methodologyVersion": "por-transparency-framework@2026-07-01",
       "snapshotTime": "2026-08-14T00:00:00Z",
-      "reportUrl": "https://ardmere.github.io/docs/reports/mexc/202608-transparency-report.html"
+      "reportUrl": "https://ardmere.github.io/docs/reports/mexc/202608-transparency-report.html",
+      "expectedSnapshotId": "1c77a71ec5bf94902b6b520454beee64631fba2ddd7a8a1af82b0967ca765ace"
     },
     {
       "path": "vendor/ardmere.github.io/docs/reports/mexc/202609-assessment.json",
@@ -462,7 +503,8 @@
       "effectivePor": false,
       "methodologyVersion": "por-transparency-framework@2026-07-01",
       "snapshotTime": "2026-09-10T00:00:00Z",
-      "reportUrl": "https://ardmere.github.io/docs/reports/mexc/202609-transparency-report.html"
+      "reportUrl": "https://ardmere.github.io/docs/reports/mexc/202609-transparency-report.html",
+      "expectedSnapshotId": "22c809a610c06b5c22a9123cde0471c786709adf7e936f14d9e8162813ccc168"
     },
     {
       "path": "vendor/ardmere.github.io/docs/reports/mexc/202610-assessment.json",
@@ -473,7 +515,8 @@
       "effectivePor": false,
       "methodologyVersion": "por-transparency-framework@2026-07-01",
       "snapshotTime": "2026-10-15T00:00:00Z",
-      "reportUrl": "https://ardmere.github.io/docs/reports/mexc/202610-transparency-report.html"
+      "reportUrl": "https://ardmere.github.io/docs/reports/mexc/202610-transparency-report.html",
+      "expectedSnapshotId": "aac4a188108d2ef44ba82ec4c79a68d154b7268135cddf26b0ceda1eca492e4e"
     },
     {
       "path": "vendor/ardmere.github.io/docs/reports/okx/507918525-assessment.json",
@@ -484,7 +527,8 @@
       "effectivePor": true,
       "methodologyVersion": "por-transparency-framework@2026-07-01",
       "snapshotTime": "2026-04-19T16:00:00Z",
-      "reportUrl": "https://ardmere.github.io/docs/reports/okx/507918525-transparency-report.html"
+      "reportUrl": "https://ardmere.github.io/docs/reports/okx/507918525-transparency-report.html",
+      "expectedSnapshotId": "c4bb45ce715ea5cca8436ed60c39223b07204e3ce440eb312fd47c731ac051c0"
     },
     {
       "path": "vendor/ardmere.github.io/docs/reports/okx/506872725-assessment.json",
@@ -495,7 +539,8 @@
       "effectivePor": true,
       "methodologyVersion": "por-transparency-framework@2026-07-01",
       "snapshotTime": "2026-05-06T16:00:00Z",
-      "reportUrl": "https://ardmere.github.io/docs/reports/okx/506872725-transparency-report.html"
+      "reportUrl": "https://ardmere.github.io/docs/reports/okx/506872725-transparency-report.html",
+      "expectedSnapshotId": "2dd400ba51a2145223a0bf8b8d968aeddb8702f4bfaa397c5169d49ee958d73e"
     },
     {
       "path": "vendor/ardmere.github.io/docs/reports/okx/508399035-assessment.json",
@@ -506,7 +551,8 @@
       "effectivePor": true,
       "methodologyVersion": "por-transparency-framework@2026-07-01",
       "snapshotTime": "2026-06-18T16:00:00Z",
-      "reportUrl": "https://ardmere.github.io/docs/reports/okx/508399035-transparency-report.html"
+      "reportUrl": "https://ardmere.github.io/docs/reports/okx/508399035-transparency-report.html",
+      "expectedSnapshotId": "e73478d38c2841232098e568a8e5ff11e20e12c29eb6b558cefe1df6092b4176"
     },
     {
       "path": "vendor/ardmere.github.io/docs/reports/okx/500375535-assessment.json",
@@ -517,7 +563,8 @@
       "effectivePor": true,
       "methodologyVersion": "por-transparency-framework@2026-07-01",
       "snapshotTime": "2026-08-10T16:00:00Z",
-      "reportUrl": "https://ardmere.github.io/docs/reports/okx/500375535-transparency-report.html"
+      "reportUrl": "https://ardmere.github.io/docs/reports/okx/500375535-transparency-report.html",
+      "expectedSnapshotId": "ed59dabbfdb39e1252067901a162dccc1938a0869c7a8d24ee83f0d690688c9f"
     },
     {
       "path": "vendor/ardmere.github.io/docs/reports/okx/502299735-assessment.json",
@@ -528,7 +575,8 @@
       "effectivePor": true,
       "methodologyVersion": "por-transparency-framework@2026-07-01",
       "snapshotTime": "2026-09-07T16:00:00Z",
-      "reportUrl": "https://ardmere.github.io/docs/reports/okx/502299735-transparency-report.html"
+      "reportUrl": "https://ardmere.github.io/docs/reports/okx/502299735-transparency-report.html",
+      "expectedSnapshotId": "399f704af1ac086a3e523519f788ab229813e6ff3f52c98cbf6f9c31842b7f77"
     },
     {
       "path": "vendor/ardmere.github.io/docs/reports/okx/502260945-assessment.json",
@@ -539,7 +587,8 @@
       "effectivePor": true,
       "methodologyVersion": "por-transparency-framework@2026-07-01",
       "snapshotTime": "2026-10-02T16:00:00Z",
-      "reportUrl": "https://ardmere.github.io/docs/reports/okx/502260945-transparency-report.html"
+      "reportUrl": "https://ardmere.github.io/docs/reports/okx/502260945-transparency-report.html",
+      "expectedSnapshotId": "35e6331fe05f1c71f8af96e5f185a97bfc01bc22152e99c1046d2e66eeff847a"
     },
     {
       "path": "vendor/ardmere.github.io/docs/reports/okx/508756245-assessment.json",
@@ -550,7 +599,8 @@
       "effectivePor": true,
       "methodologyVersion": "por-transparency-framework@2026-07-01",
       "reportUrl": "https://ardmere.github.io/docs/reports/okx/508756245-transparency-report.html",
-      "snapshotTime": "2026-10-31T16:00:00Z"
+      "snapshotTime": "2026-10-31T16:00:00Z",
+      "expectedSnapshotId": "bfbf524a313e2ef74ac1b533c426ee5a98c63114e885785659f299b2fc957494"
     },
     {
       "path": "vendor/ardmere.github.io/docs/reports/ourbit/20261101-assessment.json",
@@ -561,7 +611,8 @@
       "effectivePor": false,
       "methodologyVersion": "por-transparency-framework@2026-07-01",
       "snapshotTime": "2026-10-31T16:00:00Z",
-      "reportUrl": "https://ardmere.github.io/docs/reports/ourbit/20261101-transparency-report.html"
+      "reportUrl": "https://ardmere.github.io/docs/reports/ourbit/20261101-transparency-report.html",
+      "expectedSnapshotId": "cf880c45c95eb72602f327c669c070e2cf047bb236b57614ed774c1fca9e6412"
     },
     {
       "path": "vendor/ardmere.github.io/docs/reports/phemex/20261101-assessment.json",
@@ -572,7 +623,8 @@
       "effectivePor": false,
       "methodologyVersion": "por-transparency-framework@2026-07-01",
       "snapshotTime": "2026-11-01T00:00:00Z",
-      "reportUrl": "https://ardmere.github.io/docs/reports/phemex/20261101-transparency-report.html"
+      "reportUrl": "https://ardmere.github.io/docs/reports/phemex/20261101-transparency-report.html",
+      "expectedSnapshotId": "12abd55db2e6d9b44edf24364ab8735226d612d54b228074210cb4933ec39f80"
     },
     {
       "path": "vendor/ardmere.github.io/docs/reports/poloniex/20260801-assessment.json",
@@ -583,7 +635,8 @@
       "effectivePor": false,
       "methodologyVersion": "por-transparency-framework@2026-07-01",
       "snapshotTime": "2026-08-01T00:00:00Z",
-      "reportUrl": "https://ardmere.github.io/docs/reports/poloniex/20260801-transparency-report.html"
+      "reportUrl": "https://ardmere.github.io/docs/reports/poloniex/20260801-transparency-report.html",
+      "expectedSnapshotId": "15a044aa94d44518d5f058224728b5f33d1735c296e0016eb9d2eee645131abf"
     },
     {
       "path": "vendor/ardmere.github.io/docs/reports/poloniex/20260901-assessment.json",
@@ -594,7 +647,8 @@
       "effectivePor": false,
       "methodologyVersion": "por-transparency-framework@2026-07-01",
       "snapshotTime": "2026-09-01T00:00:00Z",
-      "reportUrl": "https://ardmere.github.io/docs/reports/poloniex/20260901-transparency-report.html"
+      "reportUrl": "https://ardmere.github.io/docs/reports/poloniex/20260901-transparency-report.html",
+      "expectedSnapshotId": "6869917204036b934877fd24350974d4a1cf9d03a740c0770eaa39ca93cecdb3"
     },
     {
       "path": "vendor/ardmere.github.io/docs/reports/poloniex/20261001-assessment.json",
@@ -605,7 +659,8 @@
       "effectivePor": false,
       "methodologyVersion": "por-transparency-framework@2026-07-01",
       "snapshotTime": "2026-10-01T00:00:00Z",
-      "reportUrl": "https://ardmere.github.io/docs/reports/poloniex/20261001-transparency-report.html"
+      "reportUrl": "https://ardmere.github.io/docs/reports/poloniex/20261001-transparency-report.html",
+      "expectedSnapshotId": "549424422ec18798fc27955780d884fd39592e2ea04de100ac59d6a9e341a803"
     },
     {
       "path": "vendor/ardmere.github.io/docs/reports/toobit/20261001-assessment.json",
@@ -616,7 +671,8 @@
       "effectivePor": false,
       "methodologyVersion": "por-transparency-framework@2026-07-01",
       "snapshotTime": "2026-10-01T00:00:00Z",
-      "reportUrl": "https://ardmere.github.io/docs/reports/toobit/20261001-transparency-report.html"
+      "reportUrl": "https://ardmere.github.io/docs/reports/toobit/20261001-transparency-report.html",
+      "expectedSnapshotId": "74eda4883275c2bf83c3b21fe25c14eed3d88608b03de0caf8f10449a2451f4b"
     },
     {
       "path": "vendor/ardmere.github.io/docs/reports/woox/20261015-assessment.json",
@@ -627,7 +683,8 @@
       "effectivePor": false,
       "methodologyVersion": "por-transparency-framework@2026-07-01",
       "snapshotTime": "2026-10-15T00:00:00Z",
-      "reportUrl": "https://ardmere.github.io/docs/reports/woox/20261015-transparency-report.html"
+      "reportUrl": "https://ardmere.github.io/docs/reports/woox/20261015-transparency-report.html",
+      "expectedSnapshotId": "0a184b7f31e216fd3079a54e4e44b2b548dc8f72c3762444608cb0f7734065f1"
     }
   ]
 }

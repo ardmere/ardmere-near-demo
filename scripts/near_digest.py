@@ -20,6 +20,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "scripts"))
 from por_snapshot import build_anchor_args  # noqa: E402
+from snapshot_id import expected_snapshot_id_hex, legacy_snapshot_id_hex  # noqa: E402
 from risk_score import CUSTODY_RISK_INCONCLUSIVE  # noqa: E402
 
 DIGESTS = ROOT / "fixtures" / "digests.json"
@@ -154,9 +155,19 @@ def normalize_hex(value):
     return text
 
 
+def snapshot_hash_ok(record, exchange, snapshot_id):
+    on_chain = normalize_hex(record.get("snapshot_id_hash"))
+    if on_chain is None:
+        return True
+    expected = expected_snapshot_id_hex(exchange, snapshot_id)
+    legacy = legacy_snapshot_id_hex(snapshot_id)
+    return on_chain in {expected, legacy}
+
+
 def same_integrity(record, args):
     return (
-        normalize_hex(record.get("assessment_sha256")) == args["assessment_sha256"]
+        snapshot_hash_ok(record, args["exchange"], args["snapshot_id"])
+        and normalize_hex(record.get("assessment_sha256")) == args["assessment_sha256"]
         and normalize_hex(record.get("artifact_bundle_root")) == args["artifact_bundle_root"]
         and normalize_hex(record.get("verification_bundle_root")) == args["verification_bundle_root"]
         and normalize_hex(record.get("exchange_merkle_root")) == args["exchange_merkle_root"]
