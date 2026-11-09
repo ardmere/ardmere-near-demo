@@ -19,7 +19,9 @@ fi
 
 LIVE_VIEW=""
 if [[ -n "${POR_NEAR_CONTRACT-}" ]]; then
-  LIVE_VIEW="$(mktemp "${TMPDIR:-/tmp}/por-near-views-XXXXXX.json")"
+  _tmp="$(mktemp "${TMPDIR:-/tmp}/por-near-views-XXXXXX")"
+  LIVE_VIEW="${_tmp}.json"
+  mv "$_tmp" "$LIVE_VIEW"
   trap 'rm -f "$LIVE_VIEW"' EXIT
   python3 "$ROOT/scripts/near_digest.py" \
     --network "${POR_NEAR_NETWORK:-testnet}" \
