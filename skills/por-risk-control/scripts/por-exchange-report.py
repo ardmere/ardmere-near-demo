@@ -13,7 +13,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[3]
 DIGESTS = ROOT / "fixtures" / "digests.json"
-DEFAULT_CONTRACT = "por-digest-v4-index.ardmere-demo-1fc2.testnet"
+DEFAULT_CONTRACT = "por-digest-v5-index.ardmere-demo-1fc2.testnet"
 
 
 def parse_iso8601(value: str) -> datetime:

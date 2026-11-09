@@ -14,22 +14,22 @@ Run the script and read the JSON. Use `riskScore`, `riskLevel`, and `factors`. T
 Set `POR_NEAR_CONTRACT` to the deployed testnet account. The view comes from a live `get` call, not from a recording:
 
 ```bash
-POR_NEAR_CONTRACT=por-digest-v4-index.ardmere-demo-1fc2.testnet \
+POR_NEAR_CONTRACT=por-digest-v5-index.ardmere-demo-1fc2.testnet \
   skills/por-risk-control/scripts/por-check.sh \
   vendor/ardmere.github.io/docs/reports/okx/508756245-assessment.json
 ```
 
-Default live testnet contract when unset in examples: `por-digest-v4-index.ardmere-demo-1fc2.testnet`.
+Default live testnet contract when unset in examples: `por-digest-v5-index.ardmere-demo-1fc2.testnet` (schema v5; `por-check.sh` sets `scoringSource: "onchain"` when `custody_risk_score` is present).
 
 ## Exchange questions (latest time, recent months)
 
 When the user asks **when the latest PoR was published** or to **evaluate recent PoR reports** for one exchange, run from the repo root (after `git clone --recurse-submodules`):
 
 ```bash
-POR_NEAR_CONTRACT=por-digest-v4-index.ardmere-demo-1fc2.testnet \
+POR_NEAR_CONTRACT=por-digest-v5-index.ardmere-demo-1fc2.testnet \
   python3 skills/por-risk-control/scripts/por-exchange-report.py binance
 
-POR_NEAR_CONTRACT=por-digest-v4-index.ardmere-demo-1fc2.testnet \
+POR_NEAR_CONTRACT=por-digest-v5-index.ardmere-demo-1fc2.testnet \
   python3 skills/por-risk-control/scripts/por-exchange-report.py binance --months 3
 ```
 
