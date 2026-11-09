@@ -17,9 +17,10 @@ pub const CUSTODY_RISK_INCONCLUSIVE: u8 = 255;
 #[near(serializers = [borsh, json])]
 #[derive(Clone, PartialEq, Debug)]
 pub struct SnapshotRecord {
-    /// Plaintext audit id (NEAR query key). Sepolia stores keccak256 of this as snapshotId.
+    /// Plaintext audit id (NEAR query key). Sepolia v6 stores composite hash as snapshotId.
     pub snapshot_id: String,
-    /// keccak256(utf8(snapshot_id)) as 64 lowercase hex chars.
+    /// expectedSnapshotId: keccak256(utf8(exchange) ++ 0x00 ++ utf8(snapshot_id)), 64 hex.
+    /// Legacy anchors may still hold keccak256(utf8(snapshot_id)) until re-anchored.
     pub snapshot_id_hash: String,
     /// keccak256(utf8(exchange)) as 64 lowercase hex chars.
     pub exchange_tag: String,
@@ -122,6 +123,7 @@ impl Contract {
             env::panic_str("por_stage must be 0..=3");
         }
         require_custody_risk_score(custody_risk_score);
+        let exchange = exchange.to_ascii_lowercase();
         let exchange_root = normalize_root(&exchange_merkle_root, true);
         let artifact_root = normalize_root(&artifact_bundle_root, false);
         let verification_root = normalize_root(&verification_bundle_root, false);
@@ -139,7 +141,7 @@ impl Contract {
             env::panic_str("snapshot already anchored with different bytes");
         }
         let record = SnapshotRecord {
-            snapshot_id_hash: keccak_hex(snapshot_id.as_bytes()),
+            snapshot_id_hash: expected_snapshot_id_hash(&exchange, &snapshot_id),
             exchange_tag: keccak_hex(exchange.as_bytes()),
             exchange,
             snapshot_id: snapshot_id.clone(),
@@ -168,21 +170,26 @@ impl Contract {
         self.register_indices(&record, &key);
     }
 
-    /// Whether a snapshot exists, scoped by exchange tag and keccak256(auditId).
-    /// Audit ids may repeat across exchanges in the vendored assessments; Sepolia
-    /// assumes globally unique audit ids, so NEAR requires `exchange_tag` here.
+    /// Whether a snapshot exists, scoped by exchange tag and snapshot id hash.
+    /// Accepts Sepolia v6 composite id or legacy keccak256(auditId) (dual-read).
     pub fn snapshot_exists(&self, exchange_tag: String, snapshot_id_hash: String) -> bool {
         let tag = require_hex32("exchange_tag", &exchange_tag);
         let hash = require_hex32("snapshot_id_hash", &snapshot_id_hash);
-        self.by_snapshot_id_hash
-            .contains_key(&tagged_snapshot_hash_key(&tag, &hash))
+        self.resolve_record_key_for_hash(&tag, &hash).is_some()
     }
 
-    /// Fetch one snapshot by exchange tag and keccak256(auditId).
+    /// Fetch one snapshot by exchange tag and snapshot id hash (composite or legacy).
     pub fn get_snapshot(&self, exchange_tag: String, snapshot_id_hash: String) -> SnapshotRecord {
         let tag = require_hex32("exchange_tag", &exchange_tag);
         let hash = require_hex32("snapshot_id_hash", &snapshot_id_hash);
         self.record_by_tagged_snapshot_id_hash(&tag, &hash)
+    }
+
+    /// Sepolia v6 expectedSnapshotId for an exchange slug and plaintext audit id.
+    pub fn expected_snapshot_id(&self, exchange: String, snapshot_id: String) -> String {
+        require_label("exchange", &exchange);
+        require_label("snapshot_id", &snapshot_id);
+        expected_snapshot_id_hash(&exchange.to_ascii_lowercase(), &snapshot_id)
     }
 
     /// Most recently anchored snapshot for an exchange tag (Sepolia getLatestSnapshot).
@@ -314,17 +321,37 @@ impl Contract {
         exchange_tag: &str,
         snapshot_id_hash: &str,
     ) -> SnapshotRecord {
-        let record_key = match self
-            .by_snapshot_id_hash
-            .get(&tagged_snapshot_hash_key(exchange_tag, snapshot_id_hash))
-        {
+        let record_key = match self.resolve_record_key_for_hash(exchange_tag, snapshot_id_hash) {
             Some(value) => value,
             None => env::panic_str("snapshot not found"),
         };
-        match self.records.get(record_key) {
+        match self.records.get(&record_key) {
             Some(record) => record.clone(),
             None => env::panic_str("snapshot not found"),
         }
+    }
+
+    /// Primary index lookup, then scan for dual-read (composite vs legacy audit-only hash).
+    fn resolve_record_key_for_hash(
+        &self,
+        exchange_tag: &str,
+        snapshot_id_hash: &str,
+    ) -> Option<String> {
+        let tagged = tagged_snapshot_hash_key(exchange_tag, snapshot_id_hash);
+        if let Some(key) = self.by_snapshot_id_hash.get(&tagged) {
+            return Some(key.clone());
+        }
+        for (record_key, record) in &self.records {
+            if record.exchange_tag != exchange_tag {
+                continue;
+            }
+            let composite = expected_snapshot_id_hash(&record.exchange, &record.snapshot_id);
+            let legacy = legacy_snapshot_id_hash(&record.snapshot_id);
+            if snapshot_id_hash == composite || snapshot_id_hash == legacy {
+                return Some(record_key.clone());
+            }
+        }
+        None
     }
 }
 
@@ -366,6 +393,18 @@ fn keccak_hex(bytes: &[u8]) -> String {
             .try_into()
             .unwrap_or_else(|_| env::panic_str("keccak256 did not return 32 bytes")),
     )
+}
+
+fn expected_snapshot_id_hash(exchange: &str, snapshot_id: &str) -> String {
+    let exchange_lower = exchange.to_ascii_lowercase();
+    let mut payload = exchange_lower.into_bytes();
+    payload.push(0);
+    payload.extend_from_slice(snapshot_id.as_bytes());
+    keccak_hex(&payload)
+}
+
+fn legacy_snapshot_id_hash(snapshot_id: &str) -> String {
+    keccak_hex(snapshot_id.as_bytes())
 }
 
 fn normalize_root(value: &str, allow_zero: bool) -> String {
@@ -581,7 +620,10 @@ mod tests {
         assert_eq!(rec.block_height, 7);
         assert_eq!(rec.anchored_at, 1_700_000_000);
         assert_eq!(rec.exchange_tag, keccak_hex(b"okx"));
-        assert_eq!(rec.snapshot_id_hash, keccak_hex(b"508756245"));
+        assert_eq!(
+            rec.snapshot_id_hash,
+            expected_snapshot_id_hash("okx", "508756245")
+        );
         assert_eq!(rec.artifact_bundle_root, "ab".repeat(32));
         assert_eq!(rec.verification_bundle_root, "ac".repeat(32));
         let logs = get_logs();
@@ -679,8 +721,8 @@ mod tests {
         assert_eq!(contract.get_snapshot_count(tag.clone()), 2);
         let first = contract.get_snapshot_id_at(tag.clone(), 0);
         let second = contract.get_snapshot_id_at(tag.clone(), 1);
-        assert_eq!(first, keccak_hex(b"older"));
-        assert_eq!(second, keccak_hex(b"newer"));
+        assert_eq!(first, expected_snapshot_id_hash("okx", "older"));
+        assert_eq!(second, expected_snapshot_id_hash("okx", "newer"));
         assert!(contract.snapshot_exists(tag.clone(), second.clone()));
         assert_eq!(
             contract
@@ -688,8 +730,27 @@ mod tests {
                 .snapshot_id,
             "newer"
         );
+        let legacy_second = legacy_snapshot_id_hash("newer");
+        assert!(contract.snapshot_exists(tag.clone(), legacy_second.clone()));
+        assert_eq!(
+            contract.get_snapshot(tag.clone(), legacy_second).snapshot_id,
+            "newer"
+        );
         assert_eq!(contract.get_latest_snapshot(tag.clone()).snapshot_id, "newer");
         assert_eq!(contract.get_snapshot_by_period(tag, 5).snapshot_id, "older");
+    }
+
+    #[test]
+    fn expected_snapshot_id_view_matches_record() {
+        let mut contract = setup(1);
+        anchor(&mut contract, "okx", "508756245", &"11".repeat(32), 2, true, 0x11);
+        let expected = contract.expected_snapshot_id("okx".to_string(), "508756245".to_string());
+        assert_eq!(
+            expected,
+            contract
+                .get("okx".to_string(), "508756245".to_string())
+                .snapshot_id_hash
+        );
     }
 
     #[test]

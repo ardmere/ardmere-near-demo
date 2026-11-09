@@ -9,6 +9,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "scripts"))
 from por_snapshot import build_anchor_args, decode_por_stage, encode_por_stage
+from snapshot_id import expected_snapshot_id_hex
 
 
 class PorSnapshot(unittest.TestCase):
@@ -30,6 +31,10 @@ class PorSnapshot(unittest.TestCase):
         self.assertEqual(len(args["verification_bundle_root"]), 64)
         self.assertNotEqual(args["artifact_bundle_root"], "0" * 64)
         self.assertEqual(args["custody_risk_score"], 10)
+        self.assertEqual(
+            expected_snapshot_id_hex(args["exchange"], args["snapshot_id"]),
+            expected_snapshot_id_hex("okx", "508756245"),
+        )
 
     def test_kucoin_assessment_packs_custody_risk_score(self):
         path = ROOT / "vendor/ardmere.github.io/docs/reports/kucoin/20261031-assessment.json"

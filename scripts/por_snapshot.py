@@ -7,7 +7,6 @@ from typing import Any
 
 from risk_score import custody_risk_score_for_anchor
 
-
 STAGE_TO_U8 = {
     "Pre-Stage": 0,
     "Stage 0": 1,
@@ -120,7 +119,7 @@ def build_anchor_args(assessment: dict, assessment_sha256: str) -> dict:
     if "coverageBps" in assessment:
         coverage_bps = as_u16(assessment.get("coverageBps"), coverage_bps)
     return {
-        "exchange": str(exchange),
+        "exchange": str(exchange).lower(),
         "snapshot_id": str(snapshot_id),
         "period_seq": int(snapshot.get("periodSeq") or 0),
         "snapshot_time": parse_snapshot_time(snapshot.get("snapshotTime")),
