@@ -164,7 +164,9 @@ Three separate roles. Nothing here writes to mainnet.
 
 `scripts/upstream_check.py` only reads the submodule and the manifest. `scripts/near_digest.py` is idempotent: a snapshot already on chain with the same bytes is skipped, and different bytes fail instead of overwriting. Neither is a timer that re-sends transactions; the trigger is a manifest change, not a clock.
 
-Schema v5 (aligned with upcoming Sepolia `custodyRiskScore`) stores `custody_risk_score` on each `SnapshotRecord`: **0–100** at anchor time (computed by `scripts/risk_score.py` from the same decision table as `por-check.sh`), **255** = inconclusive. After deploying upgraded WASM to the testnet contract, run `python3 scripts/near_digest.py --contract <c.testnet> backfill-custody --apply` to patch scores on existing v4 rows without re-anchoring roots.
+Schema v5 (aligned with Sepolia `custodyRiskScore`) stores `custody_risk_score` on each `SnapshotRecord`: **0–100** at anchor time (computed by `scripts/risk_score.py` from the same decision table as `por-check.sh`), **255** = inconclusive.
+
+**Testnet contracts:** `por-digest-v4-index.ardmere-demo-1fc2.testnet` holds **schema v4** rows (57 snapshots, live reads). Do **not** deploy v5 WASM onto that account: contract state will not deserialize. For schema v5, deploy fresh WASM with `new()` on a **new** subaccount (for example `por-digest-v5-index.ardmere-demo-1fc2.testnet`, created during sync but needs ~2 NEAR balance for WASM storage), then `reconcile --apply`. v4 rows can be backfilled with `backfill-custody --apply` only **after** v5 WASM is on an account that was initialized with v5 from an empty state (not applicable to the v4-index account).
 
 Two workflows wire this up:
 
