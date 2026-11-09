@@ -164,6 +164,8 @@ Three separate roles. Nothing here writes to mainnet.
 
 `scripts/upstream_check.py` only reads the submodule and the manifest. `scripts/near_digest.py` is idempotent: a snapshot already on chain with the same bytes is skipped, and different bytes fail instead of overwriting. Neither is a timer that re-sends transactions; the trigger is a manifest change, not a clock.
 
+Schema v5 (aligned with upcoming Sepolia `custodyRiskScore`) stores `custody_risk_score` on each `SnapshotRecord`: **0–100** at anchor time (computed by `scripts/risk_score.py` from the same decision table as `por-check.sh`), **255** = inconclusive. After deploying upgraded WASM to the testnet contract, run `python3 scripts/near_digest.py --contract <c.testnet> backfill-custody --apply` to patch scores on existing v4 rows without re-anchoring roots.
+
 Two workflows wire this up:
 
 - `.github/workflows/upstream-check.yml` runs nightly, advances the submodule in the CI checkout, and opens `cursor/upstream-sync` when a listed assessment changed. No secrets.

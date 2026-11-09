@@ -5,6 +5,8 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Any
 
+from risk_score import custody_risk_score_for_anchor
+
 
 STAGE_TO_U8 = {
     "Pre-Stage": 0,
@@ -134,4 +136,5 @@ def build_anchor_args(assessment: dict, assessment_sha256: str) -> dict:
         "reserve_coverage_bps": as_u16(assessment.get("reserveCoverageBps")),
         "assessment_sha256": normalize_root(assessment_sha256, allow_empty=False),
         "methodology_version": str(methodology),
+        "custody_risk_score": custody_risk_score_for_anchor(assessment),
     }

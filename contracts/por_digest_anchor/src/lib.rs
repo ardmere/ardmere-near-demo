@@ -1,5 +1,5 @@
 //! Stores a Sepolia-aligned PoR snapshot record plus the assessment sha256.
-//! Schema mirrors ArdmerePoRAnchor SnapshotRecord v4 (upstream ardmere.github.io).
+//! Schema mirrors ArdmerePoRAnchor SnapshotRecord v5 (upstream ardmere.github.io).
 //! Does not verify reserves, fetch exchanges, or hold funds.
 
 use near_sdk::{env, near, AccountId, PanicOnDefault};
@@ -8,8 +8,11 @@ use std::collections::HashMap;
 const KEY_SEP: char = '\u{1}';
 const PERIOD_KEY_SEP: char = '\u{2}';
 
-/// Matches ArdmerePoRAnchor SCHEMA_VERSION on Sepolia (v4 = stage + dual coverage).
-pub const SCHEMA_VERSION: u8 = 4;
+/// Matches ArdmerePoRAnchor SCHEMA_VERSION on Sepolia (v5 = custody risk score on record).
+pub const SCHEMA_VERSION: u8 = 5;
+
+/// On-chain encoding when no conclusive custody score is stored (Sepolia v5 semantics).
+pub const CUSTODY_RISK_INCONCLUSIVE: u8 = 255;
 
 #[near(serializers = [borsh, json])]
 #[derive(Clone, PartialEq, Debug)]
@@ -45,6 +48,8 @@ pub struct SnapshotRecord {
     pub methodology_version: String,
     /// NEAR block height at anchor time.
     pub block_height: u64,
+    /// Custody risk 0–100 at anchor time; 255 = inconclusive (no score committed).
+    pub custody_risk_score: u8,
 }
 
 #[near(contract_state)]
@@ -103,6 +108,7 @@ impl Contract {
         reserve_coverage_bps: u16,
         assessment_sha256: String,
         methodology_version: String,
+        custody_risk_score: u8,
     ) {
         if env::predecessor_account_id() != self.owner {
             env::panic_str("only the account that deployed this contract may anchor");
@@ -115,6 +121,7 @@ impl Contract {
         if por_stage > 3 {
             env::panic_str("por_stage must be 0..=3");
         }
+        require_custody_risk_score(custody_risk_score);
         let exchange_root = normalize_root(&exchange_merkle_root, true);
         let artifact_root = normalize_root(&artifact_bundle_root, false);
         let verification_root = normalize_root(&verification_bundle_root, false);
@@ -125,6 +132,7 @@ impl Contract {
                 && existing.artifact_bundle_root == artifact_root
                 && existing.verification_bundle_root == verification_root
                 && existing.exchange_merkle_root == exchange_root
+                && existing.custody_risk_score == custody_risk_score
             {
                 return;
             }
@@ -152,6 +160,7 @@ impl Contract {
             assessment_sha256: assessment_hex,
             methodology_version,
             block_height: env::block_height(),
+            custody_risk_score,
         };
         emit_anchored(&record);
         self.latest.insert(record.exchange.clone(), snapshot_id);
@@ -221,6 +230,30 @@ impl Contract {
     /// anchor() moves the pointer on every new write, including an older snapshot
     /// that arrives after a newer one. The manifest order is the source of which
     /// snapshot is current, so the publisher calls this after reconciling.
+    /// Set or refresh custody_risk_score on an existing snapshot (owner only).
+    /// Other snapshot fields must stay unchanged; used to backfill v4 rows after upgrade.
+    pub fn set_custody_risk_score(
+        &mut self,
+        exchange: String,
+        snapshot_id: String,
+        custody_risk_score: u8,
+    ) {
+        if env::predecessor_account_id() != self.owner {
+            env::panic_str("only the account that deployed this contract may anchor");
+        }
+        require_label("exchange", &exchange);
+        require_label("snapshot_id", &snapshot_id);
+        require_custody_risk_score(custody_risk_score);
+        let key = record_key(&exchange, &snapshot_id);
+        let record = match self.records.get_mut(&key) {
+            Some(value) => value,
+            None => env::panic_str("snapshot not found"),
+        };
+        record.custody_risk_score = custody_risk_score;
+        record.schema_version = SCHEMA_VERSION;
+        emit_anchored(record);
+    }
+
     pub fn point_latest(&mut self, exchange: String, snapshot_id: String) {
         if env::predecessor_account_id() != self.owner {
             env::panic_str("only the account that deployed this contract may anchor");
@@ -292,6 +325,12 @@ impl Contract {
             Some(record) => record.clone(),
             None => env::panic_str("snapshot not found"),
         }
+    }
+}
+
+fn require_custody_risk_score(value: u8) {
+    if value > 100 && value != CUSTODY_RISK_INCONCLUSIVE {
+        env::panic_str("custody_risk_score must be 0..=100 or 255");
     }
 }
 
@@ -374,7 +413,7 @@ fn encode_sha256(bytes: &[u8; 32]) -> String {
 fn emit_anchored(record: &SnapshotRecord) {
     let payload = format!(
         concat!(
-            "EVENT_JSON:{{\"standard\":\"por_digest_anchor\",\"version\":\"4.0.0\",",
+            "EVENT_JSON:{{\"standard\":\"por_digest_anchor\",\"version\":\"5.0.0\",",
             "\"event\":\"por_snapshot_anchored\",\"data\":[{{",
             "\"exchange\":{exchange},\"snapshot_id\":{snapshot_id},",
             "\"snapshot_id_hash\":{snapshot_id_hash},\"exchange_tag\":{exchange_tag},",
@@ -390,7 +429,8 @@ fn emit_anchored(record: &SnapshotRecord) {
             "\"reserve_coverage_bps\":{reserve_coverage_bps},",
             "\"assessment_sha256\":{assessment_sha256},",
             "\"methodology_version\":{methodology_version},",
-            "\"block_height\":{block_height}}}]}}"
+            "\"block_height\":{block_height},",
+            "\"custody_risk_score\":{custody_risk_score}}}]}}"
         ),
         exchange = json_string(&record.exchange),
         snapshot_id = json_string(&record.snapshot_id),
@@ -413,6 +453,7 @@ fn emit_anchored(record: &SnapshotRecord) {
         assessment_sha256 = json_string(&record.assessment_sha256),
         methodology_version = json_string(&record.methodology_version),
         block_height = record.block_height,
+        custody_risk_score = record.custody_risk_score,
     );
     env::log_str(&payload);
 }
@@ -471,6 +512,7 @@ mod tests {
         stage: u8,
         effective: bool,
         seed: u8,
+        custody_risk_score: u8,
     ) {
         let (ex_root, art_root, ver_root) = sample_roots(seed);
         contract.anchor(
@@ -490,6 +532,7 @@ mod tests {
             0,
             assessment_hash.to_string(),
             "por-transparency-framework@2026-07-01".to_string(),
+            custody_risk_score,
         );
     }
 
@@ -502,13 +545,23 @@ mod tests {
         effective: bool,
         seed: u8,
     ) {
-        anchor_with_period(contract, exchange, snapshot_id, assessment_hash, 1, stage, effective, seed);
+        anchor_with_period(
+            contract,
+            exchange,
+            snapshot_id,
+            assessment_hash,
+            1,
+            stage,
+            effective,
+            seed,
+            10,
+        );
     }
 
     #[test]
-    fn schema_version_is_v4() {
+    fn schema_version_is_v5() {
         let contract = setup(1);
-        assert_eq!(contract.schema_version(), 4);
+        assert_eq!(contract.schema_version(), 5);
     }
 
     #[test]
@@ -523,7 +576,8 @@ mod tests {
         assert_eq!(rec.snapshot_id, "508756245");
         assert_eq!(rec.por_stage, 2);
         assert!(rec.effective_por);
-        assert_eq!(rec.schema_version, 4);
+        assert_eq!(rec.schema_version, 5);
+        assert_eq!(rec.custody_risk_score, 10);
         assert_eq!(rec.block_height, 7);
         assert_eq!(rec.anchored_at, 1_700_000_000);
         assert_eq!(rec.exchange_tag, keccak_hex(b"okx"));
@@ -564,9 +618,9 @@ mod tests {
     #[test]
     fn get_latest_follows_the_newest_snapshot() {
         let mut contract = setup(3);
-        anchor_with_period(&mut contract, "okx", "older", &"11".repeat(32), 1, 2, true, 0x11);
+        anchor_with_period(&mut contract, "okx", "older", &"11".repeat(32), 1, 2, true, 0x11, 10);
         set_context("owner.sandbox", 4);
-        anchor_with_period(&mut contract, "okx", "newer", &"22".repeat(32), 2, 2, true, 0x22);
+        anchor_with_period(&mut contract, "okx", "newer", &"22".repeat(32), 2, 2, true, 0x22, 10);
         assert_eq!(contract.get_latest("okx".to_string()).snapshot_id, "newer");
         assert_eq!(
             decode_sha256(&contract.get_latest("okx".to_string()).assessment_sha256),
@@ -574,12 +628,12 @@ mod tests {
         );
 
         set_context("owner.sandbox", 5);
-        anchor_with_period(&mut contract, "kucoin", "20261031", &"33".repeat(32), 1, 1, false, 0x33);
+        anchor_with_period(&mut contract, "kucoin", "20261031", &"33".repeat(32), 1, 1, false, 0x33, 75);
         assert_eq!(contract.get_latest("okx".to_string()).snapshot_id, "newer");
         assert_eq!(contract.get_latest("kucoin".to_string()).snapshot_id, "20261031");
 
         set_context("owner.sandbox", 9);
-        anchor_with_period(&mut contract, "okx", "older", &"11".repeat(32), 1, 2, true, 0x11);
+        anchor_with_period(&mut contract, "okx", "older", &"11".repeat(32), 1, 2, true, 0x11, 10);
         assert_eq!(contract.get_latest("okx".to_string()).snapshot_id, "newer");
         assert_eq!(
             contract.get("okx".to_string(), "older".to_string()).block_height,
@@ -607,6 +661,7 @@ mod tests {
             2,
             true,
             0x11,
+            10,
         );
         set_context("owner.sandbox", 2);
         anchor_with_period(
@@ -618,6 +673,7 @@ mod tests {
             2,
             true,
             0x22,
+            10,
         );
         let tag = keccak_hex(b"okx");
         assert_eq!(contract.get_snapshot_count(tag.clone()), 2);
@@ -639,9 +695,9 @@ mod tests {
     #[test]
     fn get_latest_snapshot_differs_from_manifest_pointer() {
         let mut contract = setup(1);
-        anchor_with_period(&mut contract, "okx", "older", &"11".repeat(32), 3, 2, true, 0x11);
+        anchor_with_period(&mut contract, "okx", "older", &"11".repeat(32), 3, 2, true, 0x11, 10);
         set_context("owner.sandbox", 2);
-        anchor_with_period(&mut contract, "okx", "newer", &"22".repeat(32), 4, 2, true, 0x22);
+        anchor_with_period(&mut contract, "okx", "newer", &"22".repeat(32), 4, 2, true, 0x22, 10);
         contract.point_latest("okx".to_string(), "older".to_string());
         assert_eq!(contract.get_latest("okx".to_string()).snapshot_id, "older");
         let tag = keccak_hex(b"okx");
