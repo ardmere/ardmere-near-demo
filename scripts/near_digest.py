@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Read and reconcile por_digest_anchor records on NEAR through near-cli-rs.
+"""Read and reconcile por_digest_anchor records on NEAR.
 
 Two subcommands:
 
-    get        Print a near-views.json shaped document for one assessment file.
-    reconcile  Compare fixtures/digests.json with the chain and anchor what is new.
+    get        Print a near-views.json shaped document (view via JSON-RPC; no near CLI).
+    reconcile  Compare fixtures/digests.json with the chain and anchor what is new (needs near CLI + owner key).
 
 Only testnet is accepted here. demo/run.sh owns the local sandbox, and this repo
 does not write to mainnet.
@@ -13,6 +13,7 @@ does not write to mainnet.
 import argparse
 import hashlib
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -22,6 +23,7 @@ sys.path.insert(0, str(ROOT / "scripts"))
 from por_snapshot import build_anchor_args  # noqa: E402
 from snapshot_id import expected_snapshot_id_hex, legacy_snapshot_id_hex  # noqa: E402
 from risk_score import CUSTODY_RISK_INCONCLUSIVE  # noqa: E402
+from near_rpc import NearRpcError, view_get as rpc_view_get  # noqa: E402
 
 DIGESTS = ROOT / "fixtures" / "digests.json"
 ALLOWED_NETWORKS = {"testnet"}
@@ -88,6 +90,19 @@ def find_record(node):
 
 def view_get(contract, network, exchange, snapshot_id):
     """Return (record, missing, detail)."""
+    use_cli = os.environ.get("POR_NEAR_USE_CLI", "").strip().lower() in {"1", "true", "yes"}
+    if not use_cli:
+        try:
+            record = rpc_view_get(contract, exchange, snapshot_id, network=network)
+            if isinstance(record, dict) and record.get("assessment_sha256"):
+                return record, False, ""
+            return None, False, "view returned no SnapshotRecord"
+        except NearRpcError as exc:
+            text = str(exc)
+            if "snapshot not found" in text.lower() or "digest not found" in text.lower():
+                return None, True, "snapshot not found"
+            raise NearError(f"view get failed: {text[:400]}") from exc
+
     args = [
         "near", "--quiet", "contract", "call-function", "as-read-only", contract, "get",
         "json-args", json.dumps({"exchange": exchange, "snapshot_id": snapshot_id}),
@@ -258,7 +273,7 @@ def cmd_get(opts):
     doc = {
         "network": network,
         "live": True,
-        "source": "testnet-get",
+        "source": "testnet-rpc",
         "contract": opts.contract,
         "note": "Read from the NEAR testnet contract with a get view call.",
         "views": [],
