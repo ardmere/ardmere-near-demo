@@ -112,7 +112,13 @@ def integrity(factor_id, note, exchange, snapshot, stage, effective, flags, file
 def score(assessment_path):
     root = Path(os.environ["POR_ROOT"])
     sys.path.insert(0, str(root / "scripts"))
-    from risk_score import CUSTODY_RISK_INCONCLUSIVE, band, decode_on_chain_score, score_from_assessment
+    from risk_score import (
+        CUSTODY_RISK_INCONCLUSIVE,
+        SCORE_SEMANTICS,
+        band,
+        decode_on_chain_score,
+        score_from_assessment,
+    )
     from por_sources import official_sources
 
     digests_path = os.environ.get("POR_DIGESTS") or ""
@@ -292,9 +298,20 @@ def score(assessment_path):
             }
         chain_score, chain_ok = decode_on_chain_score(raw)
         if chain_ok and chain_score is not None:
-            scoring_source = "onchain"
-            risk_score = chain_score
-            level = band(risk_score)
+            near_obj["custodyRiskScoreMatchesComputed"] = chain_score == local["riskScore"]
+            if chain_score == local["riskScore"]:
+                scoring_source = "onchain"
+                risk_score = chain_score
+                level = band(risk_score)
+            else:
+                near_obj["custodyRiskScoreMismatch"] = {
+                    "onchain": chain_score,
+                    "computed": local["riskScore"],
+                    "note": (
+                        "On-chain custody_risk_score differs from the main-site scorer; "
+                        "showing computed (recomputed) to match ardmere.github.io."
+                    ),
+                }
 
     out = {
         "exchange": exchange,
@@ -303,6 +320,7 @@ def score(assessment_path):
         "riskLevel": level,
         "conclusive": conclusive,
         "scoringSource": scoring_source,
+        "scoreSemantics": dict(SCORE_SEMANTICS),
         "factors": factors,
         "porStage": stage,
         "effectivePoR": effective,
@@ -311,8 +329,8 @@ def score(assessment_path):
         "digestsSha256": digests_sha,
         "near": near_obj,
     }
-    if scoring_source == "onchain" and risk_score != local["riskScore"]:
-        out["recomputedRiskScore"] = local["riskScore"]
+    if scoring_source == "recomputed" and near_obj.get("custodyRiskScore") is not None:
+        out["onchainCustodyRiskScore"] = near_obj.get("custodyRiskScore")
     if isinstance(assessment_dict, dict) and path.is_file():
         out["officialSources"] = official_sources(assessment_dict, path, repo_root=root)
     return out

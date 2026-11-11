@@ -1,10 +1,10 @@
-# Custody risk score
+# PoR transparency risk score
 
-The skill scores custody risk. It does not decide whether to trade. There is no `decision` field and no allow / reduce / block output. `por-check.sh` and the dashboard both use this table. A second run has to land on the same integers.
+The skill scores **transparency / disclosure risk** for a published PoR assessment. **Higher `riskScore` = higher risk** (worse public verification posture). It is **not** reserve adequacy, solvency, or “exchange safety.” There is no `decision` field. `por-check.sh` and `scripts/risk_score.py` match **`ardmere.github.io` `skills/por-custody-risk`** (including `derive_disclosure_factors`).
 
-`riskScore` is an integer from 0 to 100. Sum the applied `factors[].delta` values. If that sum is above 100, reduce deltas from the last factor backward until the sum is 100, and say so in the note. `riskScore` is that sum.
+Every JSON output includes **`scoreSemantics`**: `kind: transparency_risk`, `scale` explains higher = worse.
 
-`riskLevel` starts from the score, then a floor can raise it:
+`riskScore` is the sum of `factors[].delta`, capped at **100** by trimming from the last factor backward.
 
 | Score | Level |
 | --- | --- |
@@ -13,101 +13,34 @@ The skill scores custody risk. It does not decide whether to trade. There is no 
 | 50–79 | `high` |
 | 80–100 | `critical` |
 
-Floors, applied after the band: a blocking flag raises the level to at least `high`. Stage below effective PoR raises the level to at least `medium`. A hash failure is `critical`.
-
-## Hash failure
-
-If the assessment file is missing, `fixtures/digests.json` cannot be read, the file sha256 differs from `fixtures/digests.json`, or a NEAR `get` result is present and its `assessment_sha256` differs from the file sha256: one factor, delta **100**, level `critical`. Flag points are not added. The factor id is the first failure in this order:
-
-| Id | When |
-| --- | --- |
-| `FILE_MISSING` | The assessment path does not exist |
-| `DIGESTS_UNREADABLE` | `fixtures/digests.json` is missing or is not the expected JSON |
-| `DIGEST_MISMATCH` | The file sha256 differs from the `digests.json` row, or the row is missing |
-| `NEAR_GET_MISMATCH` | A `get` view for this exchange and snapshot is present and the hash differs |
-| `NEAR_GET_MISSING` | The view came from a live contract (`near.live` is `true`) and that contract holds no record for this snapshot |
-
-A missing NEAR view from the sandbox recording is not a mismatch. The recording is optional, so its silence says nothing about the chain. `NEAR_GET_MISSING` applies only to a live `get` that answered "not found": the snapshot is not anchored yet. Comparison is on the 32-byte hex, case-insensitive, `0x` ignored.
-
-## Blocking flags
-
-These ids are the public framework's high flags that block a stage. Each occurrence in `riskFlags` adds **40**.
-
-| Id | Delta |
-| --- | --- |
-| `UNVERIFIABLE` | 40 |
-| `LOGIN_WALL` | 40 |
-| `SAMPLE_ONLY` | 40 |
-| `BLACK_BOX_INCLUSION_PROOF` | 40 |
-
-`BLACK_BOX_INCLUSION_PROOF` and `LOGIN_WALL` describe the exchange's artifact, not the user's own file. Verifying a user's inclusion proof locally does not remove either flag: the flag says the public cannot check the tree, and one user's private proof does not change that. Report a pass as "your leaf was in the published tree", never as "this flag is resolved".
-
-## User inclusion proof
-
-`scripts/inclusion_check.py` is separate from the score. It verifies one user's proof and never adds or removes `factors`. A failing proof does not raise `riskScore`; it means the proof the user holds is not consistent with the root it names.
-
-| Verdict | Meaning |
-| --- | --- |
-| `PASS` | the leaf and path recompute to the root the proof names |
-| `FAIL` | they do not; the file is inconsistent, altered, or for another snapshot |
-
-`binding.matches` compares the recomputed root with the assessment's `snapshot.exchangeMerkleRoot`. `null` means nothing was bound: either the assessment publishes no root, or the published root has a different width than the scheme produces.
-
-`ROOT_WIDTH_MISMATCH` marks the second case. Bitget currently publishes a 256-bit root while its user proofs produce 64-bit roots, so those two cannot be compared. Do not turn that into a claim about the user's proof.
-
-`TRUNCATED_HASH` marks schemes that keep fewer than 256 bits: Bitget 64, MEXC 128. Treat those passes as weak evidence, in the same way the upstream verifier notes do.
-
-## Stage below effective PoR
-
-If the hash matches and `porStage` is `Stage 0` or `Pre-Stage` (the exact value, or that value followed by a space, hyphen, or em dash), add one factor:
-
-| Id | Delta |
-| --- | --- |
-| `STAGE_BELOW_EFFECTIVE_POR` | 35 |
-
-## Non-blocking flags
-
-Applied only when the hash matches. Each remaining `riskFlags` entry adds the delta below. The sum of these deltas is capped at **20**. That cap is the base 0–20 for a matching hash with `effectivePoR` true and no blocking flag. Points come from the flag id. Severity is only the fallback for an id that is not in this table.
-
-| Id | Delta |
-| --- | --- |
-| `STAGE_BLOCKED` | 8 |
-| `NO_WALLET_OWNERSHIP_PROOF` | 8 |
-| `OPAQUE_TRUSTED_SETUP` | 8 |
-| `BUSINESS_CONSTRAINT_GAP` | 8 |
-| `NEGATIVE_NET_WORTH_DUMMY_USER_RISK` | 8 |
-| `IMPLEMENTATION_SEMANTICS_RISK` | 8 |
-| `HIGH_FRICTION_INCLUSION_PROOF` | 5 |
-| `NO_INDEPENDENT_REVIEW` | 5 |
-| `NO_CANONICAL_ANCHOR` | 5 |
-| `CONFLICT_OF_INTEREST_UNDISCLOSED` | 5 |
-| `HIGH_FREQUENCY_GAP` | 5 |
-
-Fallback when the id is not listed above and is not blocking:
-
-| Severity on the flag | Delta |
-| --- | --- |
-| `critical` | 10 |
-| `high` | 8 |
-| `medium` | 5 |
-| `low` | 2 |
-| `info` | 1 |
-| missing or anything else | 5 |
+Floors: blocking flag → at least `high`; stage below effective PoR → at least `medium`.
 
 ## Order
 
-1. Hash failure, if any, and stop.
-2. Blocking flags, in `riskFlags` order.
-3. Stage factor, if the stage is below effective PoR.
-4. Non-blocking flags, in `riskFlags` order, capped at 20.
+1. File / digest / NEAR hash integrity (`por-check.sh`). Stop on failure.
+2. Blocking flags in `riskFlags` order (+40 each).
+3. `STAGE_BELOW_EFFECTIVE_POR` (+35) when applicable.
+4. **Derived disclosure gaps** (`derive_disclosure_factors`): `NO_PUBLIC_WALLET_ADDRESS_LIST` (+16), derived `NO_WALLET_OWNERSHIP_PROOF` (+8).
+5. Remaining non-blocking `riskFlags`, sum capped at **20**.
 
-The note on a flag factor is the assessment's `message` when it has one.
+## NEAR digest integrity
 
-## Fixtures copied from github.io `e4400bd`
+When `POR_NEAR_CONTRACT` is set, `por-check.sh` compares the file sha256 to `fixtures/digests.json` and to the live `get.assessment_sha256`. Failures use delta **100** (`FILE_MISSING`, `DIGEST_MISMATCH`, `NEAR_GET_MISMATCH`, `NEAR_GET_MISSING`, …). Sandbox `fixtures/near-views.json` without `near.live` does not imply a mismatch.
 
-These are the scores of the unmodified files. Do not edit the JSON to change them.
+When the file matches the chain digest but **`custody_risk_score` on NEAR differs** from the recomputed (main-site) score, the output keeps **`scoringSource: recomputed`** and records `near.custodyRiskScoreMismatch`. Re-anchor with `reconcile --apply` after scorer upgrades to refresh on-chain scores.
 
-| File | Flags | Score | Level |
-| --- | --- | --- | --- |
-| OKX `508756245` | `NO_CANONICAL_ANCHOR` +5, `HIGH_FREQUENCY_GAP` +5. Stage 1, `effectivePoR` true, hash matches | 10 | `low` |
-| KuCoin `20261031` | `UNVERIFIABLE` +40, `STAGE_BELOW_EFFECTIVE_POR` +35. Stage 0, `effectivePoR` false, hash matches | 75 | `high` |
+## Blocking / stage / derived / non-blocking tables
+
+Same integers as [upstream decision-table](https://github.com/ardmere/ardmere.github.io/blob/main/skills/por-custody-risk/references/decision-table.md): blocking +40; stage +35; derived list +16; non-blocking cap 20.
+
+## Reference scores (file-only, main-site scorer)
+
+| File | Score | Level |
+| --- | --- | --- |
+| OKX `508756245` | 10 | `low` |
+| KuCoin `20261031` | 99 | `critical` |
+| Bybit `2026102706` | 99 | `critical` |
+| Bitget `20261021` | 99 | `critical` |
+| Binance `PR04NOV26` | 91 | `critical` |
+
+Do not treat the number as “exchange safety”; read `factors[]` and `officialSources`.

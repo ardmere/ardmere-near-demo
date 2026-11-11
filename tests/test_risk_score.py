@@ -39,9 +39,18 @@ class RiskScore(unittest.TestCase):
             self.skipTest("submodule missing")
         assessment = json.loads(path.read_text())
         scored = score_from_assessment(assessment)
-        self.assertEqual(scored["riskScore"], 75)
-        self.assertEqual(scored["riskLevel"], "high")
-        self.assertEqual(custody_risk_score_for_anchor(assessment), 75)
+        self.assertEqual(scored["riskScore"], 99)
+        self.assertEqual(scored["riskLevel"], "critical")
+        self.assertEqual(scored["scoreSemantics"]["kind"], "transparency_risk")
+        self.assertEqual(custody_risk_score_for_anchor(assessment), 99)
+
+    def test_bybit_main_site_parity(self):
+        path = ROOT / "vendor/ardmere.github.io/docs/reports/bybit/2026102706-assessment.json"
+        if not path.is_file():
+            self.skipTest("submodule missing")
+        assessment = json.loads(path.read_text())
+        scored = score_from_assessment(assessment)
+        self.assertEqual(scored["riskScore"], 99)
 
 
 if __name__ == "__main__":

@@ -1,7 +1,6 @@
-"""Custody risk scoring table (single source for anchor time and por-check).
+"""PoR transparency risk scoring (aligned with ardmere.github.io por-custody-risk).
 
-Mirrors skills/por-risk-control/references/decision-table.md and
-vendor/ardmere.github.io/skills/por-custody-risk/scripts/risk_score.py flag deltas.
+Single source for anchor-time custody_risk_score and por-check recomputation.
 """
 
 from __future__ import annotations
@@ -33,8 +32,26 @@ SEVERITY_FALLBACK = {
     "info": 1,
 }
 NONBLOCKING_CAP = 20
+DISCLOSURE_GAP = 16  # NO_PUBLIC_WALLET_ADDRESS_LIST; not subject to non-blocking cap
 SCORE_CAP = 100
 RANK = {"low": 0, "medium": 1, "high": 2, "critical": 3}
+
+SCORE_SEMANTICS = {
+    "kind": "transparency_risk",
+    "label": "PoR transparency risk",
+    "interpretation": (
+        "Higher riskScore means worse public disclosure and verification posture "
+        "(missing artifacts, anchor gaps, unverifiable dimensions). "
+        "It is not reserve adequacy, solvency, or a trading recommendation."
+    ),
+    "scale": "0=lowest transparency risk in this table, 100=highest",
+}
+
+LIST_BLOCK_RULE_IDS = frozenset({
+    "floor_no_public_wallet_address_list",
+    "floor_no_snapshot_wallet_address_list",
+    "floor_no_machine_readable_wallet_list",
+})
 
 # Sepolia / NEAR schema v5: uint8 0–100, 255 = inconclusive (no score committed).
 CUSTODY_RISK_INCONCLUSIVE = 255
@@ -79,6 +96,81 @@ def cap_sum(factors: list[dict], limit: int) -> None:
             item["note"] = (item["note"] + " Score capped at 100.").strip()
 
 
+def _checklist_item(assessment: dict, item_id: str):
+    for row in assessment.get("checklist") or []:
+        if isinstance(row, dict) and row.get("id") == item_id:
+            return row
+    return None
+
+
+def has_public_wallet_zip(assessment: dict) -> bool:
+    if not isinstance(assessment, dict):
+        return False
+    present = (assessment.get("artifacts") or {}).get("present") or []
+    for art in present:
+        if not isinstance(art, dict):
+            continue
+        kind = str(art.get("kind") or "").lower()
+        if "walletzip" in kind.replace("_", ""):
+            return True
+    return False
+
+
+def derive_disclosure_factors(assessment: dict, flag_ids: list[str]) -> list[dict]:
+    """Supplemental factors from stageBlockedReasons, checklist, and verifierResults."""
+    extra: list[dict] = []
+    if not isinstance(assessment, dict):
+        return extra
+
+    if not has_public_wallet_zip(assessment):
+        list_note = None
+        for row in assessment.get("stageBlockedReasons") or []:
+            if not isinstance(row, dict):
+                continue
+            if row.get("ruleId") in LIST_BLOCK_RULE_IDS:
+                list_note = row.get("reason") or "No public wallet_address_list."
+                break
+        if list_note is None:
+            s1_1 = _checklist_item(assessment, "S1-1")
+            if s1_1 and s1_1.get("status") in ("fail", "unverifiable"):
+                list_note = s1_1.get("notes") or "wallet_address_list not public or on-chain verifiable."
+        if list_note is not None:
+            extra.append({
+                "id": "NO_PUBLIC_WALLET_ADDRESS_LIST",
+                "delta": DISCLOSURE_GAP,
+                "note": list_note,
+            })
+
+    if "NO_WALLET_OWNERSHIP_PROOF" not in flag_ids:
+        own_note = None
+        for verdict in assessment.get("verifierResults") or []:
+            if not isinstance(verdict, dict):
+                continue
+            vid = str(verdict.get("verifierId") or "")
+            if not vid.startswith("address-ownership"):
+                continue
+            if verdict.get("verdict") in ("FAIL", "UNVERIFIABLE"):
+                own_note = verdict.get("reason") or "address-ownership verifier did not PASS."
+                break
+        if own_note is None:
+            s1_2 = _checklist_item(assessment, "S1-2")
+            if s1_2 and s1_2.get("status") in ("fail", "unverifiable"):
+                own_note = s1_2.get("notes") or "wallet_ownership_proof not batch-verifiable."
+        if own_note is not None:
+            extra.append({
+                "id": "NO_WALLET_OWNERSHIP_PROOF",
+                "delta": NONBLOCKING["NO_WALLET_OWNERSHIP_PROOF"],
+                "note": own_note,
+            })
+
+    return extra
+
+
+def attach_score_semantics(payload: dict) -> dict:
+    payload["scoreSemantics"] = dict(SCORE_SEMANTICS)
+    return payload
+
+
 def score_from_assessment(assessment: dict) -> dict:
     """Return riskScore (0–100), riskLevel, and factors from assessment flags/stage."""
     stage = assessment.get("porStage")
@@ -87,7 +179,7 @@ def score_from_assessment(assessment: dict) -> dict:
     flag_rows = raw_flags if isinstance(raw_flags, list) else []
     flag_ids = [f["id"] for f in flag_rows if isinstance(f, dict) and isinstance(f.get("id"), str)]
 
-    factors = []
+    factors: list[dict] = []
     saw_blocking = False
     for flag in flag_rows:
         if not isinstance(flag, dict):
@@ -107,12 +199,18 @@ def score_from_assessment(assessment: dict) -> dict:
             "delta": 35,
             "note": f"porStage is {stage}, below effective PoR.",
         })
+    derived_ids: set[str] = set()
+    for item in derive_disclosure_factors(assessment, flag_ids):
+        factors.append(item)
+        derived_ids.add(item["id"])
     nonblocking_added = 0
     for flag in flag_rows:
         if not isinstance(flag, dict):
             continue
         flag_id = flag.get("id")
         if not isinstance(flag_id, str) or flag_id in BLOCKING:
+            continue
+        if flag_id in derived_ids:
             continue
         full = NONBLOCKING.get(flag_id)
         if full is None:
@@ -133,14 +231,15 @@ def score_from_assessment(assessment: dict) -> dict:
     if stage_below(stage):
         level = at_least(level, "medium")
 
-    return {
+    return attach_score_semantics({
         "riskScore": risk_score,
         "riskLevel": level,
+        "conclusive": True,
         "factors": factors,
         "porStage": stage,
         "effectivePoR": effective,
         "riskFlags": flag_ids,
-    }
+    })
 
 
 def encode_on_chain_score(risk_score: int | None, *, conclusive: bool = True) -> int:

@@ -5,9 +5,9 @@ description: Score CEX custody risk from a public Proof-of-Reserves assessment, 
 
 # PoR risk control
 
-This skill scores custody risk. It does not decide whether to trade. The final trade decision stays with the user or their agent.
+This skill scores **PoR transparency risk** (same table as **ardmere.github.io** `por-custody-risk`). **Higher `riskScore` = worse public disclosure posture**, not reserve adequacy or “exchange safety.” It does not decide whether to trade.
 
-Run the script and read the JSON. Use `riskScore`, `riskLevel`, and `factors`. There is no `decision` field. Do not invent allow, reduce, or block.
+Run the script and read the JSON. Use `scoreSemantics`, `riskScore`, `riskLevel`, `conclusive`, and `factors`. There is no `decision` field. Do not invent allow, reduce, or block. When speaking to humans, say **transparency risk (higher = worse)**.
 
 ## Dependencies (read path)
 
