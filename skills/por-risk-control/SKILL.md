@@ -5,9 +5,9 @@ description: Score CEX custody risk from a public Proof-of-Reserves assessment, 
 
 # PoR risk control
 
-This skill scores custody risk. It does not decide whether to trade. The final trade decision stays with the user or their agent.
+This skill scores **PoR transparency risk** (same table as **ardmere.github.io** `por-custody-risk`). **Higher `riskScore` = worse public disclosure posture**, not reserve adequacy or “exchange safety.” It does not decide whether to trade.
 
-Run the script and read the JSON. Use `riskScore`, `riskLevel`, and `factors`. There is no `decision` field. Do not invent allow, reduce, or block.
+Run the script and read the JSON. Use `scoreSemantics`, `riskScore`, `riskLevel`, `conclusive`, and `factors`. There is no `decision` field. Do not invent allow, reduce, or block. When speaking to humans, say **transparency risk (higher = worse)**.
 
 ## Dependencies (read path)
 
@@ -64,13 +64,19 @@ POR_NEAR_CONTRACT=por-digest-v5-index.ardmere-demo-1fc2.testnet \
   python3 skills/por-risk-control/scripts/por-exchange-report.py binance --months 3
 ```
 
-The script calls `get_latest` over public RPC for the latest snapshot time and id, then runs `por-check.sh` on each assessment in `fixtures/digests.json` for that exchange within the window. JSON (`--json`) and text output include **`officialSources`** per snapshot. Answer in plain language:
+The script calls `get_latest` over public RPC, then `por-check.sh` on each manifest row. Default human output is **Markdown tables** (`--format markdown`). Machine output: `--json`.
 
-- **Publish time** means the assessment `snapshotTime` (exchange snapshot UTC), confirmed by the chain record's `snapshot_time` for `get_latest`.
-- **Scores** describe how far the public disclosure is from third-party recompute (`UNVERIFIABLE`, stage, flags). They do not prove reserves.
-- Say when every row shows `near.matches: true` (file hash equals on-chain `assessment_sha256`).
+## Present results to the user
 
-Add `--json` when another tool consumes the output.
+**Do not write long paragraphs.** Follow [`references/presentation-format.md`](references/presentation-format.md):
+
+1. **Headline table** — exchange, latest snapshot id/time, transparency risk score/level, stage, `near.matches`.
+2. **Official sources table** — exchange PoR page + `publicArtifacts` URLs (+ ardmere report link).
+3. **History table** — one row per snapshot (date, score, level, hash match, top factors).
+
+Prefer pasting the script's markdown output or mirroring its tables. For a single `por-check`, use the **single snapshot** template in the same file (factors as a small Δ table, max 5 rows).
+
+Add `--json` only when another tool consumes the output.
 
 Read the `near` block to see where the view came from:
 

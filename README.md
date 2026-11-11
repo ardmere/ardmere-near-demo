@@ -243,6 +243,6 @@ From the repo root:
 
 `fixtures/near-views.json` in git is a sandbox recording, not a live chain. The script is the check.
 
-The manifest covers every snapshot from the 19 exchanges in the submodule: Binance, BingX, Bitget, Bitunix, BTCC, Bybit, CoinEx, CoinW, Gate, HTX, Kraken, KuCoin, MEXC, OKX, Ourbit, Phemex, Poloniex, Toobit, and WOOX. Two examples: OKX `508756245` scores 10, `low` (`NO_CANONICAL_ANCHOR` +5 and `HIGH_FREQUENCY_GAP` +5). KuCoin `20261031` scores 75, `high` (`UNVERIFIABLE` +40 and stage +35). `fixtures/near-views.json` in git is a sandbox recording of those two snapshots. A full `./demo/run.sh` rewrites it for every listed snapshot. `THESIS.md` states the claim, the evidence for it, the evidence against it, and what result would drop the claim.
+The manifest covers every snapshot from the 19 exchanges in the submodule: Binance, BingX, Bitget, Bitunix, BTCC, Bybit, CoinEx, CoinW, Gate, HTX, Kraken, KuCoin, MEXC, OKX, Ourbit, Phemex, Poloniex, Toobit, and WOOX. Two examples: OKX `508756245` scores 10, `low` (`NO_CANONICAL_ANCHOR` +5 and `HIGH_FREQUENCY_GAP` +5). KuCoin `20261031` scores 99, `critical` (blocking + stage + derived disclosure gaps; same scorer as ardmere.github.io). `fixtures/near-views.json` in git is a sandbox recording of those two snapshots. A full `./demo/run.sh` rewrites it for every listed snapshot. `THESIS.md` states the claim, the evidence for it, the evidence against it, and what result would drop the claim.
 
 Accounts the script prints exist only inside that sandbox process. They are not mainnet accounts.

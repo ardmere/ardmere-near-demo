@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import subprocess
 import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -16,6 +17,79 @@ from near_rpc import NearRpcError, view_get_latest  # noqa: E402
 from por_sources import official_sources  # noqa: E402
 DIGESTS = ROOT / "fixtures" / "digests.json"
 DEFAULT_CONTRACT = "por-digest-v5-index.ardmere-demo-1fc2.testnet"
+
+
+def _yn(value) -> str:
+    if value is True:
+        return "yes"
+    if value is False:
+        return "no"
+    return "—"
+
+
+def _factor_summary(factors, limit: int = 5) -> str:
+    if not isinstance(factors, list) or not factors:
+        return "—"
+    parts = []
+    for row in factors[:limit]:
+        if not isinstance(row, dict):
+            continue
+        fid = row.get("id") or "?"
+        delta = row.get("delta")
+        parts.append(f"{fid} (+{delta})" if delta is not None else fid)
+    if len(factors) > limit:
+        parts.append(f"+{len(factors) - limit} more")
+    return ", ".join(parts)
+
+
+def print_markdown_report(payload: dict, period_label: str) -> None:
+    exchange = payload["exchange"]
+    latest = payload["latest"]
+    src = latest.get("officialSources") or {}
+
+    print(f"## {exchange} · PoR transparency risk\n")
+    print("| Item | Value |")
+    print("| --- | --- |")
+    print(f"| NEAR contract | `{payload['contract']}` ({payload['network']}) |")
+    print(f"| Latest snapshot (chain) | `{latest['snapshotId']}` |")
+    print(f"| Snapshot time (UTC) | {latest['snapshotTimeUtc']} |")
+    print(f"| PoR stage | {latest['porStage']} |")
+    print(f"| Effective PoR | {_yn(latest['effectivePoR'])} |")
+    print(f"| Assessment SHA256 | `{latest.get('assessmentSha256') or '—'}` |")
+    print()
+
+    print("### Official sources (user verification)\n")
+    print("| Kind | URL |")
+    print("| --- | --- |")
+    if src.get("exchangePorPage"):
+        print(f"| Exchange PoR page | {src['exchangePorPage']} |")
+    for art in src.get("publicArtifacts") or []:
+        print(f"| {art.get('kind', 'artifact')} | {art.get('url', '—')} |")
+    for repo in src.get("upstreamVerifierRepos") or [][:3]:
+        print(f"| OSS ({repo.get('role', 'verifier')}) | {repo.get('url', '—')} |")
+    if src.get("ardmereTransparencyReport"):
+        print(f"| ardmere transparency report | {src['ardmereTransparencyReport']} |")
+    if src.get("ardmereAssessment"):
+        print(f"| ardmere assessment JSON | {src['ardmereAssessment']} |")
+    print()
+
+    rows = payload["period"]["assessments"]
+    print(f"### {period_label} ({len(rows)} snapshots)\n")
+    print("| Snapshot | Date | Stage | Risk | Level | Hash OK | Scoring | Top factors |")
+    print("| --- | --- | --- | ---: | --- | :---: | --- | --- |")
+    for row in rows:
+        flags = row.get("riskFlags") or []
+        flag_cell = ", ".join(flags[:3])
+        if len(flags) > 3:
+            flag_cell += ", …"
+        print(
+            f"| `{row['snapshotId']}` | {row['snapshotTime'][:10]} | {row.get('porStage') or '—'} "
+            f"| **{row.get('riskScore')}** | {row.get('riskLevel') or '—'} "
+            f"| {_yn(row.get('nearMatches'))} | {row.get('scoringSource') or '—'} "
+            f"| {_factor_summary(row.get('factors')) or flag_cell} |"
+        )
+    print()
+    print("_Scores are **transparency risk** (higher = worse disclosure), not reserve adequacy._")
 
 
 def parse_iso8601(value: str) -> datetime:
@@ -59,6 +133,12 @@ def main() -> int:
     parser.add_argument("--contract", default=os.environ.get("POR_NEAR_CONTRACT", DEFAULT_CONTRACT))
     parser.add_argument("--network", default=os.environ.get("POR_NEAR_NETWORK", "testnet"))
     parser.add_argument("--json", action="store_true", help="print machine-readable JSON only")
+    parser.add_argument(
+        "--format",
+        choices=("markdown", "plain"),
+        default="markdown",
+        help="human layout: markdown tables (default) or plain lines",
+    )
     args = parser.parse_args()
     exchange = args.exchange.strip().lower()
 
@@ -101,6 +181,8 @@ def main() -> int:
                 "riskScore": score.get("riskScore"),
                 "riskLevel": score.get("riskLevel"),
                 "riskFlags": score.get("riskFlags", []),
+                "factors": score.get("factors", []),
+                "scoringSource": score.get("scoringSource"),
                 "nearMatches": (score.get("near") or {}).get("matches"),
                 "officialSources": official_sources(assessment, path, repo_root=ROOT),
             }
@@ -133,32 +215,27 @@ def main() -> int:
         print(json.dumps(payload, indent=2))
         return 0
 
+    period_label = f"Last {args.months} months" if args.months else "All listed snapshots"
+    if args.format == "markdown":
+        print_markdown_report(payload, period_label)
+        return 0
+
     print(f"Exchange: {exchange}")
     print(f"NEAR contract: {args.contract} ({args.network})")
     print()
-    print("Latest PoR snapshot (get_latest on chain):")
-    print(f"  snapshot id:     {payload['latest']['snapshotId']}")
-    print(f"  snapshot time:   {payload['latest']['snapshotTimeUtc']} (UTC)")
-    print(f"  por stage:       {payload['latest']['porStage']}")
-    print(f"  effective PoR:   {payload['latest']['effectivePoR']}")
+    print("Latest (chain get_latest):")
+    print(f"  snapshot: {payload['latest']['snapshotId']}  @ {payload['latest']['snapshotTimeUtc']} UTC")
+    print(f"  stage: {payload['latest']['porStage']}  effectivePoR: {payload['latest']['effectivePoR']}")
     src = payload["latest"].get("officialSources") or {}
     if src.get("exchangePorPage"):
-        print(f"  exchange PoR:    {src['exchangePorPage']}")
-    for row in (src.get("publicArtifacts") or [])[:5]:
-        print(f"  artifact ({row.get('kind')}): {row.get('url')}")
-    if len(src.get("publicArtifacts") or []) > 5:
-        print("  … more artifact URLs in --json officialSources.publicArtifacts")
+        print(f"  por page: {src['exchangePorPage']}")
     print()
-    label = f"Last {args.months} months" if args.months else "All listed snapshots"
-    print(f"{label} — custody risk (por-check vs live chain):")
+    print(f"{period_label}:")
     for row in scored:
-        flags = ", ".join(row["riskFlags"][:3])
-        if len(row["riskFlags"]) > 3:
-            flags += ", …"
         print(
-            f"  {row['snapshotId']:12}  {row['snapshotTime'][:10]}  "
-            f"{row['porStage']:8}  score={row['riskScore']:3} {row['riskLevel']:8}  "
-            f"near.matches={row['nearMatches']}  flags={flags}"
+            f"  {row['snapshotId']:14} {row['snapshotTime'][:10]}  "
+            f"score={row['riskScore']} {row['riskLevel']}  match={row['nearMatches']}  "
+            f"src={row.get('scoringSource')}"
         )
     return 0
 

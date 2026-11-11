@@ -43,7 +43,7 @@ class PorSnapshot(unittest.TestCase):
         assessment = json.loads(path.read_text())
         digest = hashlib.sha256(path.read_bytes()).hexdigest()
         args = build_anchor_args(assessment, digest)
-        self.assertEqual(args["custody_risk_score"], 75)
+        self.assertEqual(args["custody_risk_score"], 99)
 
 
 if __name__ == "__main__":
