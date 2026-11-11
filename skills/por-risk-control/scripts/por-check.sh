@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Hash one assessment file, compare fixtures/digests.json and a NEAR get, print a risk score.
-# The NEAR view comes from a live testnet contract when POR_NEAR_CONTRACT is set, otherwise
-# from the sandbox recording in fixtures/near-views.json.
+# The NEAR view comes from a live testnet contract (JSON-RPC via scripts/near_rpc.py) when
+# POR_NEAR_CONTRACT is set, otherwise from the sandbox recording in fixtures/near-views.json.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/../../.." && pwd)"
@@ -12,7 +12,7 @@ fi
 
 if [[ $# -ne 1 ]]; then
   echo "usage: por-check.sh <assessment.json>" >&2
-  echo "  POR_NEAR_CONTRACT=<account.testnet> reads the get view from that testnet contract" >&2
+  echo "  POR_NEAR_CONTRACT=<account.testnet> reads the get view via public RPC (no near CLI)" >&2
   echo "  otherwise the sandbox recording in fixtures/near-views.json is used" >&2
   exit 2
 fi
@@ -113,6 +113,7 @@ def score(assessment_path):
     root = Path(os.environ["POR_ROOT"])
     sys.path.insert(0, str(root / "scripts"))
     from risk_score import CUSTODY_RISK_INCONCLUSIVE, band, decode_on_chain_score, score_from_assessment
+    from por_sources import official_sources
 
     digests_path = os.environ.get("POR_DIGESTS") or ""
     near_path = os.environ.get("POR_NEAR_VIEWS") or ""
@@ -312,6 +313,8 @@ def score(assessment_path):
     }
     if scoring_source == "onchain" and risk_score != local["riskScore"]:
         out["recomputedRiskScore"] = local["riskScore"]
+    if isinstance(assessment_dict, dict) and path.is_file():
+        out["officialSources"] = official_sources(assessment_dict, path, repo_root=root)
     return out
 
 

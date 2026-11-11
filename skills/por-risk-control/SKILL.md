@@ -9,9 +9,19 @@ This skill scores custody risk. It does not decide whether to trade. The final t
 
 Run the script and read the JSON. Use `riskScore`, `riskLevel`, and `factors`. There is no `decision` field. Do not invent allow, reduce, or block.
 
+## Dependencies (read path)
+
+| Need | Notes |
+| --- | --- |
+| `python3` | stdlib only for scoring + RPC |
+| `bash` | `por-check.sh` wrapper |
+| This repo | `fixtures/digests.json`, `vendor/ardmere.github.io` assessments |
+| **Public NEAR testnet RPC** | Default `https://rpc.testnet.fastnear.com` (fallback `rpc.testnet.near.org`); override with `POR_NEAR_RPC_URL` |
+| **`near` CLI** | **Not required** for read/score (`por-check`, `por-exchange-report`). Still required only for **owner** writes (`near_digest.py reconcile --apply`) |
+
 ## Read the digest from testnet
 
-Set `POR_NEAR_CONTRACT` to the deployed testnet account. The view comes from a live `get` call, not from a recording:
+Set `POR_NEAR_CONTRACT` to the deployed testnet account. The view uses **JSON-RPC `query` + `call_function`** (`scripts/near_rpc.py`), not `near-cli`:
 
 ```bash
 POR_NEAR_CONTRACT=por-digest-v5-index.ardmere-demo-1fc2.testnet \
@@ -20,6 +30,27 @@ POR_NEAR_CONTRACT=por-digest-v5-index.ardmere-demo-1fc2.testnet \
 ```
 
 Default live testnet contract when unset in examples: `por-digest-v5-index.ardmere-demo-1fc2.testnet` (schema v5; `por-check.sh` sets `scoringSource: "onchain"` when `custody_risk_score` is present).
+
+Equivalent one-liner without the script (same contract/method as README Step 1):
+
+```bash
+curl -sS -X POST "${POR_NEAR_RPC_URL:-https://rpc.testnet.fastnear.com}" \
+  -H 'Content-Type: application/json' \
+  -d '{"jsonrpc":"2.0","id":"1","method":"query","params":{"request_type":"call_function","finality":"final","account_id":"por-digest-v5-index.ardmere-demo-1fc2.testnet","method_name":"get","args_base64":"'$(printf '%s' '{"exchange":"okx","snapshot_id":"508756245"}' | base64 -w0)'"}}'
+```
+
+## Official sources (verify alongside the score)
+
+Every `por-check` JSON includes **`officialSources`** so the user can cross-check exchange-published data, not only the ardmere score:
+
+| Field | Meaning |
+| --- | --- |
+| `exchangePorPage` | Exchange official PoR landing page (`config/exchanges/registry.yaml`) |
+| `publicArtifacts[]` | Permissionless URLs from the assessment (`artifacts.present`: BAPI, wallet zip, …) |
+| `upstreamVerifierRepos[]` | Exchange OSS verifier repos (registry) |
+| `ardmereAssessment` / `ardmereTransparencyReport` | Links to the vendored public evaluation files |
+
+When answering, **always cite** `exchangePorPage` and at least the main `publicArtifacts` URLs when giving a custody risk score, and say that the score is ardmere's recompute/chain read—not the exchange's own rating.
 
 ## Exchange questions (latest time, recent months)
 
@@ -33,7 +64,7 @@ POR_NEAR_CONTRACT=por-digest-v5-index.ardmere-demo-1fc2.testnet \
   python3 skills/por-risk-control/scripts/por-exchange-report.py binance --months 3
 ```
 
-The script calls `get_latest` on chain for the latest snapshot time and id, then runs `por-check.sh` on each assessment in `fixtures/digests.json` for that exchange within the window. Answer in plain language:
+The script calls `get_latest` over public RPC for the latest snapshot time and id, then runs `por-check.sh` on each assessment in `fixtures/digests.json` for that exchange within the window. JSON (`--json`) and text output include **`officialSources`** per snapshot. Answer in plain language:
 
 - **Publish time** means the assessment `snapshotTime` (exchange snapshot UTC), confirmed by the chain record's `snapshot_time` for `get_latest`.
 - **Scores** describe how far the public disclosure is from third-party recompute (`UNVERIFIABLE`, stage, flags). They do not prove reserves.
@@ -47,7 +78,9 @@ Read the `near` block to see where the view came from:
 | --- | --- |
 | `near.network` | `testnet` for the live contract, `sandbox` for the recording |
 | `near.live` | `true` only when a view call answered in this run |
+| `near.source` | `testnet-rpc` when read via JSON-RPC |
 | `near.contract` | the account the `get` was sent to |
+| `officialSources` | exchange PoR page, artifact URLs, ardmere report links (see above) |
 | `near.matches` | whether the on-chain `assessment_sha256` equals the file sha256 |
 | `near` record | schema v5 `SnapshotRecord`: roots, `por_stage` (0–3), coverage bps, and `custody_risk_score` (0–100, or 255 = inconclusive) |
 | `near.custodyRiskScore` | same uint8 as on chain |

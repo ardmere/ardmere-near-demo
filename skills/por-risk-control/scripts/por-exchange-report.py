@@ -6,12 +6,14 @@ from __future__ import annotations
 import argparse
 import json
 import os
-import subprocess
 import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[3]
+sys.path.insert(0, str(ROOT / "scripts"))
+from near_rpc import NearRpcError, view_get_latest  # noqa: E402
+from por_sources import official_sources  # noqa: E402
 DIGESTS = ROOT / "fixtures" / "digests.json"
 DEFAULT_CONTRACT = "por-digest-v5-index.ardmere-demo-1fc2.testnet"
 
@@ -24,39 +26,10 @@ def parse_iso8601(value: str) -> datetime:
 
 
 def near_get_latest(contract: str, network: str, exchange: str) -> dict:
-    proc = subprocess.run(
-        [
-            "near",
-            "--quiet",
-            "contract",
-            "call-function",
-            "as-read-only",
-            contract,
-            "get_latest",
-            "json-args",
-            json.dumps({"exchange": exchange}),
-            "network-config",
-            network,
-            "now",
-        ],
-        capture_output=True,
-        text=True,
-        timeout=120,
-        check=False,
-    )
-    text = proc.stdout
-    start = text.find("{")
-    if start < 0:
-        raise RuntimeError(f"get_latest failed for {exchange}: {proc.stderr or proc.stdout}")
-    depth = 0
-    for index in range(start, len(text)):
-        if text[index] == "{":
-            depth += 1
-        elif text[index] == "}":
-            depth -= 1
-            if depth == 0:
-                return json.loads(text[start : index + 1])
-    raise RuntimeError(f"could not parse get_latest JSON for {exchange}")
+    try:
+        return view_get_latest(contract, exchange, network=network)
+    except NearRpcError as exc:
+        raise RuntimeError(f"get_latest failed for {exchange}: {exc}") from exc
 
 
 def run_por_check(assessment_path: Path, contract: str, network: str) -> dict:
@@ -101,6 +74,9 @@ def main() -> int:
 
     live = near_get_latest(args.contract, args.network, exchange)
     live_dt = datetime.fromtimestamp(int(live["snapshot_time"]), tz=timezone.utc)
+    latest_assessment_path = ROOT / latest_row["path"]
+    latest_assessment = json.loads(latest_assessment_path.read_text(encoding="utf-8"))
+    latest_sources = official_sources(latest_assessment, latest_assessment_path, repo_root=ROOT)
 
     if args.months is not None and args.months > 0:
         cutoff = latest_dt - timedelta(days=30 * args.months)
@@ -114,6 +90,7 @@ def main() -> int:
         if not path.is_file():
             print(f"skip missing file: {path}", file=sys.stderr)
             continue
+        assessment = json.loads(path.read_text(encoding="utf-8"))
         score = run_por_check(path, args.contract, args.network)
         scored.append(
             {
@@ -125,6 +102,7 @@ def main() -> int:
                 "riskLevel": score.get("riskLevel"),
                 "riskFlags": score.get("riskFlags", []),
                 "nearMatches": (score.get("near") or {}).get("matches"),
+                "officialSources": official_sources(assessment, path, repo_root=ROOT),
             }
         )
 
@@ -142,6 +120,7 @@ def main() -> int:
             ),
             "effectivePoR": bool(live.get("effective_por")),
             "assessmentSha256": live.get("assessment_sha256"),
+            "officialSources": latest_sources,
         },
         "period": {
             "months": args.months,
@@ -162,6 +141,13 @@ def main() -> int:
     print(f"  snapshot time:   {payload['latest']['snapshotTimeUtc']} (UTC)")
     print(f"  por stage:       {payload['latest']['porStage']}")
     print(f"  effective PoR:   {payload['latest']['effectivePoR']}")
+    src = payload["latest"].get("officialSources") or {}
+    if src.get("exchangePorPage"):
+        print(f"  exchange PoR:    {src['exchangePorPage']}")
+    for row in (src.get("publicArtifacts") or [])[:5]:
+        print(f"  artifact ({row.get('kind')}): {row.get('url')}")
+    if len(src.get("publicArtifacts") or []) > 5:
+        print("  … more artifact URLs in --json officialSources.publicArtifacts")
     print()
     label = f"Last {args.months} months" if args.months else "All listed snapshots"
     print(f"{label} — custody risk (por-check vs live chain):")
