@@ -166,6 +166,8 @@ Three separate roles. Nothing here writes to mainnet.
 
 Schema v5 (aligned with Sepolia `custodyRiskScore`) stores `custody_risk_score` on each `SnapshotRecord`: **0–100** at anchor time (computed by `scripts/risk_score.py` from the same decision table as `por-check.sh`), **255** = inconclusive.
 
+**Schema v7 is code-ready and not deployed.** `contracts/por_digest_anchor` now matches Sepolia v7: `total_liability_usd` and `total_reserve_usd` (`u128`, `0` = unavailable, whole USD) and `btc` / `eth` / `usdt` / `usdc` `_reserve_ratio_bps` (`u16`, `10000` = 100%, `65535` = unavailable). `get_snapshot` / `get` return those fields. `schema_version()` returns `7`. Do **not** deploy this WASM onto `por-digest-v5-index` — the borsh layout changed and existing state will not deserialize. A future account would be a new subaccount. `scripts/por_snapshot.py` packs the fields from assessment JSON (`totalLiabilityUsd`, `totalReserveUsd`, `majorCoinReserveRates`); sending those args to the live v5 account will fail to deserialize.
+
 **Testnet contracts:** **`por-digest-v5-index.ardmere-demo-1fc2.testnet`** is the default live account (schema **v5**, 57 snapshots, **`custody_risk_score` on chain**). Set `POR_NEAR_CONTRACT` and `vars.NEAR_CONTRACT_ID` (CI) to this account. Legacy **`por-digest-v4-index.ardmere-demo-1fc2.testnet`** remains schema v4 (digest-only reads; no on-chain custody score). Do **not** deploy v5 WASM onto the v4-index account — state will not deserialize. New deploys use a **new** subaccount, `new()`, then `reconcile --apply`.
 
 Two workflows wire this up:

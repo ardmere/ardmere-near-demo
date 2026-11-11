@@ -99,8 +99,51 @@ def as_u16(value: Any, default: int = 0) -> int:
     return number
 
 
+USD_UNAVAILABLE = 0
+RATIO_UNAVAILABLE = 65535
+_MAJOR = ("BTC", "ETH", "USDT", "USDC")
+
+
+def whole_usd(value: Any) -> int:
+    """Nearest whole USD. None / non-positive → 0 (unavailable). Tiny positives encode as 1."""
+    if value is None:
+        return USD_UNAVAILABLE
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return USD_UNAVAILABLE
+    if number != number or number <= 0:
+        return USD_UNAVAILABLE
+    rounded = int(round(number))
+    if rounded < 1:
+        return 1
+    return rounded
+
+
+def major_ratio_bps(assessment: dict, coin: str) -> int:
+    rows = assessment.get("majorCoinReserveRates") or []
+    if not isinstance(rows, list):
+        return RATIO_UNAVAILABLE
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        if str(row.get("coin") or "").upper() != coin:
+            continue
+        try:
+            rate = float(row.get("reserveRate"))
+        except (TypeError, ValueError):
+            return RATIO_UNAVAILABLE
+        if rate < 0:
+            return RATIO_UNAVAILABLE
+        bps = int(round(rate * 10000))
+        if bps > 65534:
+            return 65534
+        return bps
+    return RATIO_UNAVAILABLE
+
+
 def build_anchor_args(assessment: dict, assessment_sha256: str) -> dict:
-    """Return json-args for por_digest_anchor::anchor (schema v4 + assessment digest)."""
+    """Return json-args for por_digest_anchor::anchor (schema v7 + assessment digest)."""
     snapshot = assessment.get("snapshot") if isinstance(assessment.get("snapshot"), dict) else {}
     artifacts = assessment.get("artifacts") if isinstance(assessment.get("artifacts"), dict) else {}
     exchange = assessment.get("exchange")
@@ -136,4 +179,10 @@ def build_anchor_args(assessment: dict, assessment_sha256: str) -> dict:
         "assessment_sha256": normalize_root(assessment_sha256, allow_empty=False),
         "methodology_version": str(methodology),
         "custody_risk_score": custody_risk_score_for_anchor(assessment),
+        "total_liability_usd": whole_usd(assessment.get("totalLiabilityUsd")),
+        "total_reserve_usd": whole_usd(assessment.get("totalReserveUsd")),
+        "btc_reserve_ratio_bps": major_ratio_bps(assessment, "BTC"),
+        "eth_reserve_ratio_bps": major_ratio_bps(assessment, "ETH"),
+        "usdt_reserve_ratio_bps": major_ratio_bps(assessment, "USDT"),
+        "usdc_reserve_ratio_bps": major_ratio_bps(assessment, "USDC"),
     }
