@@ -14,6 +14,20 @@
 | PoR stage | {porStage} |
 | Effective PoR | {effectivePoR} |
 | NEAR digest match | {near.matches} |
+| Schema (chain) | {near.schemaVersion} |
+
+### Self-reported reserves (`selfReportedReserves`)
+
+Always include when answering PoR **assessment** questions (label: exchange self-report, **not** verified solvency).
+
+| Metric | Source field |
+| --- | --- |
+| Total liability (USD) | `totalLiabilityUsd` |
+| Total reserve (USD) | `totalReserveUsd` |
+| Total reserve ratio | `totalReserveRatioPct` |
+| BTC / ETH / USDT / USDC ratios | `majorCoinReserveRates[]` (`—` when `available: false`) |
+
+Use a small **two-table** block (totals + coin ratios). Do not bury these numbers in prose.
 
 ### Top factors
 

@@ -120,6 +120,7 @@ def score(assessment_path):
         score_from_assessment,
     )
     from por_sources import official_sources
+    from reserve_metrics import build_reserve_metrics
 
     digests_path = os.environ.get("POR_DIGESTS") or ""
     near_path = os.environ.get("POR_NEAR_VIEWS") or ""
@@ -175,7 +176,19 @@ def score(assessment_path):
         "matches": None,
         "assessmentSha256": near_sha,
         "custodyRiskScore": result.get("custody_risk_score") if isinstance(result, dict) else None,
+        "schemaVersion": result.get("schema_version") if isinstance(result, dict) else None,
     }
+    if isinstance(result, dict):
+        for key in (
+            "total_liability_usd",
+            "total_reserve_usd",
+            "btc_reserve_ratio_bps",
+            "eth_reserve_ratio_bps",
+            "usdt_reserve_ratio_bps",
+            "usdc_reserve_ratio_bps",
+        ):
+            if key in result:
+                near_obj[key] = result.get(key)
     if near_present and file_sha and near_sha:
         near_obj["matches"] = near_sha == file_sha
     elif near_present and file_sha and not near_sha:
@@ -331,6 +344,11 @@ def score(assessment_path):
     }
     if scoring_source == "recomputed" and near_obj.get("custodyRiskScore") is not None:
         out["onchainCustodyRiskScore"] = near_obj.get("custodyRiskScore")
+    if isinstance(assessment_dict, dict):
+        out["selfReportedReserves"] = build_reserve_metrics(
+            assessment_dict,
+            near_record=result if isinstance(result, dict) else None,
+        )
     if isinstance(assessment_dict, dict) and path.is_file():
         out["officialSources"] = official_sources(assessment_dict, path, repo_root=root)
     return out
