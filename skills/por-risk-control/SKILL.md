@@ -97,10 +97,10 @@ Every successful `por-check` includes **`selfReportedReserves`**:
 | --- | --- |
 | `totalLiabilityUsd` / `totalReserveUsd` | Exchange self-reported USD totals (null = not published) |
 | `totalReserveRatioPct` | `totalReserveUsd / totalLiabilityUsd` when both published |
-| `majorCoinReserveRates` | Up to **5 display rows**: BTC, ETH, USDT, USDC, BNB (`available: false` → show **—**) |
+| `majorCoinReserveRates` | **4 rows**: BTC, ETH, USDT, USDC (`available: false` → show **—**) |
 | `onChainTotal*` / `onChainBps` | v7 digest fields when live; parity in `onChainMatchesAssessment` |
 
-When presenting PoR evaluations, **always show** total liability, total reserve, total reserve ratio, and the five coin ratio rows (from `selfReportedReserves`), then transparency risk. Say clearly these are **self-reported**, not ardmere-verified solvency. Layout: [`references/presentation-format.md`](references/presentation-format.md).
+When presenting PoR evaluations, **always show** total liability, total reserve, total reserve ratio, and the four major coin ratio rows (from `selfReportedReserves`), then transparency risk. Say clearly these are **self-reported**, not ardmere-verified solvency. Layout: [`references/presentation-format.md`](references/presentation-format.md).
 
 **Legacy:** `por-digest-v5-index.ardmere-demo-1fc2.testnet` still holds pre-`640123e` digests; `near.matches` is **false** against current assessment files. Use v7-index for live checks.
 

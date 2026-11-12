@@ -16,9 +16,9 @@ class ReserveMetricsTest(unittest.TestCase):
         metrics = build_reserve_metrics(assessment)
         self.assertGreater(metrics["totalLiabilityUsd"], 0)
         self.assertGreater(metrics["totalReserveRatio"], 1.0)
+        self.assertEqual(len(metrics["majorCoinReserveRates"]), 4)
         available = [r for r in metrics["majorCoinReserveRates"] if r["available"]]
         self.assertEqual(len(available), 4)
-        self.assertFalse(metrics["majorCoinReserveRates"][4]["available"])  # BNB placeholder
 
 
 if __name__ == "__main__":

@@ -60,7 +60,7 @@ def _print_reserve_block(reserves: dict | None) -> None:
         pct = row.get("reserveRatioPct") if row.get("available") else "—"
         print(f"| {row.get('coin', '?')} | {pct} |")
     print()
-    print("_Self-reported only; not verified solvency. Coin rows follow BTC, ETH, USDT, USDC, BNB display order._\n")
+    print("_Self-reported only; not verified solvency. Coin rows: BTC, ETH, USDT, USDC._\n")
 
 
 def _factor_summary(factors, limit: int = 5) -> str:

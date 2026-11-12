@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
-# Display order: four schema majors plus BNB as common fifth headline coin.
-DISPLAY_COINS = ("BTC", "ETH", "USDT", "USDC", "BNB")
+# Same four majors as assessment schema and v7 on-chain bps fields.
+DISPLAY_COINS = ("BTC", "ETH", "USDT", "USDC")
 
 BPS_UNAVAILABLE = 65535
 USD_UNAVAILABLE = 0

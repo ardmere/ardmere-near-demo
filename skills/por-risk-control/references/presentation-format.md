@@ -25,7 +25,7 @@ Always include when answering PoR **assessment** questions (label: exchange self
 | Total liability (USD) | `totalLiabilityUsd` |
 | Total reserve (USD) | `totalReserveUsd` |
 | Total reserve ratio | `totalReserveRatioPct` |
-| BTC / ETH / USDT / USDC / BNB ratios | `majorCoinReserveRates[]` (`—` when `available: false`) |
+| BTC / ETH / USDT / USDC ratios | `majorCoinReserveRates[]` (`—` when `available: false`) |
 
 Use a small **two-table** block (totals + coin ratios). Do not bury these numbers in prose.
 
