@@ -1,6 +1,6 @@
 {
   "sourceRepo": "ardmere/ardmere.github.io",
-  "sourceCommit": "640123e91250bcff06197973e52fcc0b74d5dc14",
+  "sourceCommit": "daff626015e5720a114925e691b0ccb7a755fb2c",
   "assessments": [
     {
       "path": "vendor/ardmere.github.io/docs/reports/binance/PR01APR26-assessment.json",
@@ -258,7 +258,7 @@
       "path": "vendor/ardmere.github.io/docs/reports/bybit/2026082604-assessment.json",
       "exchange": "bybit",
       "snapshotId": "2026082604",
-      "sha256": "202d907d574eb1622a870f689873b2df29c8c515556e7b0914411c0b399baf47",
+      "sha256": "11fffc182bfb634b32d0b46d2041d2c344c673e44085cc4bbf9cca55d63394d6",
       "porStage": "Stage 0",
       "effectivePor": false,
       "methodologyVersion": "por-transparency-framework@2026-07-01",
@@ -282,7 +282,7 @@
       "path": "vendor/ardmere.github.io/docs/reports/bybit/2026102706-assessment.json",
       "exchange": "bybit",
       "snapshotId": "2026102706",
-      "sha256": "110684aeb8afd5b00a620e82640036eaf91dc192fb0825c9b64a20d398f46b18",
+      "sha256": "bec42cd78f13d994b047a1ece91a5fa9cff8d0ba3be3f70584af3bfa18168187",
       "porStage": "Stage 0",
       "effectivePor": false,
       "methodologyVersion": "por-transparency-framework@2026-07-01",
