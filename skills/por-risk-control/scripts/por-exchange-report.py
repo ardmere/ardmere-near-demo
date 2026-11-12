@@ -15,6 +15,11 @@ ROOT = Path(__file__).resolve().parents[3]
 sys.path.insert(0, str(ROOT / "scripts"))
 from near_rpc import NearRpcError, view_get_latest  # noqa: E402
 from por_sources import official_sources  # noqa: E402
+from reserve_display import (  # noqa: E402
+    fmt_major_coin_ratio,
+    fmt_reserve_usd,
+    fmt_total_reserve_ratio_pct,
+)
 DIGESTS = ROOT / "fixtures" / "digests.json"
 DEFAULT_CONTRACT = "por-digest-v7-index.ardmere-demo-1fc2.testnet"
 
@@ -27,38 +32,24 @@ def _yn(value) -> str:
     return "—"
 
 
-def _fmt_usd(value) -> str:
-    if value is None:
-        return "—"
-    try:
-        number = float(value)
-    except (TypeError, ValueError):
-        return "—"
-    if number >= 1e9:
-        return f"${number / 1e9:.2f}B"
-    if number >= 1e6:
-        return f"${number / 1e6:.2f}M"
-    return f"${number:,.0f}"
-
-
 def _print_reserve_block(reserves: dict | None) -> None:
     if not isinstance(reserves, dict):
         return
     print("### Self-reported reserves (exchange disclosure)\n")
     print("| Metric | Value |")
     print("| --- | --- |")
-    print(f"| Total liability (USD) | {_fmt_usd(reserves.get('totalLiabilityUsd'))} |")
-    print(f"| Total reserve (USD) | {_fmt_usd(reserves.get('totalReserveUsd'))} |")
-    ratio = reserves.get("totalReserveRatioPct") or "—"
-    print(f"| Total reserve ratio | {ratio} |")
+    print(f"| Total liability (USD) | {fmt_reserve_usd(reserves.get('totalLiabilityUsd'))} |")
+    print(f"| Total reserve (USD) | {fmt_reserve_usd(reserves.get('totalReserveUsd'))} |")
+    print(
+        f"| Total reserve ratio | {fmt_total_reserve_ratio_pct(reserves.get('totalReserveRatioPct'))} |"
+    )
     print()
     print("| Coin | Reserve ratio |")
     print("| --- | ---: |")
     for row in reserves.get("majorCoinReserveRates") or []:
         if not isinstance(row, dict):
             continue
-        pct = row.get("reserveRatioPct") if row.get("available") else "—"
-        print(f"| {row.get('coin', '?')} | {pct} |")
+        print(f"| {row.get('coin', '?')} | {fmt_major_coin_ratio(row)} |")
     print()
     print("_Self-reported only; not verified solvency. Coin rows: BTC, ETH, USDT, USDC._\n")
 

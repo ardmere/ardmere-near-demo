@@ -20,12 +20,14 @@
 
 Always include when answering PoR **assessment** questions (label: exchange self-report, **not** verified solvency).
 
-| Metric | Source field |
+| Metric | Value (example) |
 | --- | --- |
-| Total liability (USD) | `totalLiabilityUsd` |
-| Total reserve (USD) | `totalReserveUsd` |
-| Total reserve ratio | `totalReserveRatioPct` |
-| BTC / ETH / USDT / USDC ratios | `majorCoinReserveRates[]` (`—` when `available: false`) |
+| Total liability (USD) | `$9.32B` or **Unavailable** |
+| Total reserve (USD) | `$32.62B` or **Unavailable** |
+| Total reserve ratio | `105.33%` or **Unavailable** |
+| BTC / ETH / USDT / USDC ratios | `108.39%` or **Unavailable** each |
+
+**Missing values:** when a field is `null`, `available: false`, or absent, show **`Unavailable`** in user-facing tables (not `—`, not blank). JSON from `por-check` keeps machine `null` / booleans unchanged.
 
 Use a small **two-table** block (totals + coin ratios). Do not bury these numbers in prose.
 
