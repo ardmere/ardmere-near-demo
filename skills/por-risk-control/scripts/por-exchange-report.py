@@ -27,6 +27,42 @@ def _yn(value) -> str:
     return "—"
 
 
+def _fmt_usd(value) -> str:
+    if value is None:
+        return "—"
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return "—"
+    if number >= 1e9:
+        return f"${number / 1e9:.2f}B"
+    if number >= 1e6:
+        return f"${number / 1e6:.2f}M"
+    return f"${number:,.0f}"
+
+
+def _print_reserve_block(reserves: dict | None) -> None:
+    if not isinstance(reserves, dict):
+        return
+    print("### Self-reported reserves (exchange disclosure)\n")
+    print("| Metric | Value |")
+    print("| --- | --- |")
+    print(f"| Total liability (USD) | {_fmt_usd(reserves.get('totalLiabilityUsd'))} |")
+    print(f"| Total reserve (USD) | {_fmt_usd(reserves.get('totalReserveUsd'))} |")
+    ratio = reserves.get("totalReserveRatioPct") or "—"
+    print(f"| Total reserve ratio | {ratio} |")
+    print()
+    print("| Coin | Reserve ratio |")
+    print("| --- | ---: |")
+    for row in reserves.get("majorCoinReserveRates") or []:
+        if not isinstance(row, dict):
+            continue
+        pct = row.get("reserveRatioPct") if row.get("available") else "—"
+        print(f"| {row.get('coin', '?')} | {pct} |")
+    print()
+    print("_Self-reported only; not verified solvency. Coin rows follow BTC, ETH, USDT, USDC, BNB display order._\n")
+
+
 def _factor_summary(factors, limit: int = 5) -> str:
     if not isinstance(factors, list) or not factors:
         return "—"
@@ -72,6 +108,14 @@ def print_markdown_report(payload: dict, period_label: str) -> None:
     if src.get("ardmereAssessment"):
         print(f"| ardmere assessment JSON | {src['ardmereAssessment']} |")
     print()
+
+    manifest_id = latest.get("manifestSnapshotId")
+    latest_reserves = None
+    for row in payload["period"]["assessments"]:
+        if row.get("snapshotId") == manifest_id:
+            latest_reserves = row.get("selfReportedReserves")
+            break
+    _print_reserve_block(latest_reserves)
 
     rows = payload["period"]["assessments"]
     print(f"### {period_label} ({len(rows)} snapshots)\n")
@@ -184,6 +228,7 @@ def main() -> int:
                 "factors": score.get("factors", []),
                 "scoringSource": score.get("scoringSource"),
                 "nearMatches": (score.get("near") or {}).get("matches"),
+                "selfReportedReserves": score.get("selfReportedReserves"),
                 "officialSources": official_sources(assessment, path, repo_root=ROOT),
             }
         )

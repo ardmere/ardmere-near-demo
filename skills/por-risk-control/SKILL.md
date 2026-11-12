@@ -91,7 +91,16 @@ Read the `near` block to see where the view came from:
 | `near.custodyRiskScore` | same uint8 as on chain |
 | `scoringSource` | `onchain` when the score is read from `custody_risk_score`; otherwise `recomputed` from the assessment file |
 
-When the user cares about **self-reported reserves**, cite on-chain reserve fields only as *what was anchored with the assessment digest* (not verified solvency). Compare to `totalLiabilityUsd` / `majorCoinReserveRates` in the JSON when useful.
+Every successful `por-check` includes **`selfReportedReserves`**:
+
+| Field | Meaning |
+| --- | --- |
+| `totalLiabilityUsd` / `totalReserveUsd` | Exchange self-reported USD totals (null = not published) |
+| `totalReserveRatioPct` | `totalReserveUsd / totalLiabilityUsd` when both published |
+| `majorCoinReserveRates` | Up to **5 display rows**: BTC, ETH, USDT, USDC, BNB (`available: false` → show **—**) |
+| `onChainTotal*` / `onChainBps` | v7 digest fields when live; parity in `onChainMatchesAssessment` |
+
+When presenting PoR evaluations, **always show** total liability, total reserve, total reserve ratio, and the five coin ratio rows (from `selfReportedReserves`), then transparency risk. Say clearly these are **self-reported**, not ardmere-verified solvency. Layout: [`references/presentation-format.md`](references/presentation-format.md).
 
 **Legacy:** `por-digest-v5-index.ardmere-demo-1fc2.testnet` still holds pre-`640123e` digests; `near.matches` is **false** against current assessment files. Use v7-index for live checks.
 
