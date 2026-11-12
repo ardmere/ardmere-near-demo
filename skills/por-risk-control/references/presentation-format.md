@@ -14,6 +14,9 @@
 | PoR stage | {porStage} |
 | Effective PoR | {effectivePoR} |
 | NEAR digest match | {near.matches} |
+| Schema (chain) | {near.schemaVersion} |
+
+Optional when `schemaVersion` ≥ 7 and values are not `0` / `65535`: one row each for self-reported **total liability / reserve USD** and major-coin **reserve ratio bps** from `near.*` (label as exchange self-report, not verified).
 
 ### Top factors
 

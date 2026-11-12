@@ -16,7 +16,7 @@ sys.path.insert(0, str(ROOT / "scripts"))
 from near_rpc import NearRpcError, view_get_latest  # noqa: E402
 from por_sources import official_sources  # noqa: E402
 DIGESTS = ROOT / "fixtures" / "digests.json"
-DEFAULT_CONTRACT = "por-digest-v5-index.ardmere-demo-1fc2.testnet"
+DEFAULT_CONTRACT = "por-digest-v7-index.ardmere-demo-1fc2.testnet"
 
 
 def _yn(value) -> str:

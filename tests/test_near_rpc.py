@@ -31,12 +31,13 @@ class PorSources(unittest.TestCase):
 
 @unittest.skipUnless(os.environ.get("RUN_LIVE_NEAR_RPC") == "1", "set RUN_LIVE_NEAR_RPC=1 for live RPC")
 class LiveNearRpc(unittest.TestCase):
-    contract = "por-digest-v5-index.ardmere-demo-1fc2.testnet"
+    contract = "por-digest-v7-index.ardmere-demo-1fc2.testnet"
 
     def test_get_okx(self):
         rec = view_get(self.contract, "okx", "508756245")
         self.assertEqual(rec["exchange"], "okx")
         self.assertEqual(int(rec["custody_risk_score"]), 10)
+        self.assertEqual(int(rec.get("schema_version", 0)), 7)
 
 
 if __name__ == "__main__":

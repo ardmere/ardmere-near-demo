@@ -24,19 +24,19 @@ Run the script and read the JSON. Use `scoreSemantics`, `riskScore`, `riskLevel`
 Set `POR_NEAR_CONTRACT` to the deployed testnet account. The view uses **JSON-RPC `query` + `call_function`** (`scripts/near_rpc.py`), not `near-cli`:
 
 ```bash
-POR_NEAR_CONTRACT=por-digest-v5-index.ardmere-demo-1fc2.testnet \
+POR_NEAR_CONTRACT=por-digest-v7-index.ardmere-demo-1fc2.testnet \
   skills/por-risk-control/scripts/por-check.sh \
   vendor/ardmere.github.io/docs/reports/okx/508756245-assessment.json
 ```
 
-Default live testnet contract when unset in examples: `por-digest-v5-index.ardmere-demo-1fc2.testnet` (schema v5; `por-check.sh` sets `scoringSource: "onchain"` when `custody_risk_score` is present).
+Default live testnet contract: **`por-digest-v7-index.ardmere-demo-1fc2.testnet`** (schema **v7**, 57 snapshots at submodule `640123e`). Includes `custody_risk_score` plus self-reported USD totals and major-coin reserve ratio bps. `por-exchange-report.py` uses the same default when `--contract` is omitted.
 
 Equivalent one-liner without the script (same contract/method as README Step 1):
 
 ```bash
 curl -sS -X POST "${POR_NEAR_RPC_URL:-https://rpc.testnet.fastnear.com}" \
   -H 'Content-Type: application/json' \
-  -d '{"jsonrpc":"2.0","id":"1","method":"query","params":{"request_type":"call_function","finality":"final","account_id":"por-digest-v5-index.ardmere-demo-1fc2.testnet","method_name":"get","args_base64":"'$(printf '%s' '{"exchange":"okx","snapshot_id":"508756245"}' | base64 -w0)'"}}'
+  -d '{"jsonrpc":"2.0","id":"1","method":"query","params":{"request_type":"call_function","finality":"final","account_id":"por-digest-v7-index.ardmere-demo-1fc2.testnet","method_name":"get","args_base64":"'$(printf '%s' '{"exchange":"okx","snapshot_id":"508756245"}' | base64 -w0)'"}}'
 ```
 
 ## Official sources (verify alongside the score)
@@ -57,11 +57,9 @@ When answering, **always cite** `exchangePorPage` and at least the main `publicA
 When the user asks **when the latest PoR was published** or to **evaluate recent PoR reports** for one exchange, run from the repo root (after `git clone --recurse-submodules`):
 
 ```bash
-POR_NEAR_CONTRACT=por-digest-v5-index.ardmere-demo-1fc2.testnet \
-  python3 skills/por-risk-control/scripts/por-exchange-report.py binance
+python3 skills/por-risk-control/scripts/por-exchange-report.py binance
 
-POR_NEAR_CONTRACT=por-digest-v5-index.ardmere-demo-1fc2.testnet \
-  python3 skills/por-risk-control/scripts/por-exchange-report.py binance --months 3
+python3 skills/por-risk-control/scripts/por-exchange-report.py binance --months 3
 ```
 
 The script calls `get_latest` over public RPC, then `por-check.sh` on each manifest row. Default human output is **Markdown tables** (`--format markdown`). Machine output: `--json`.
@@ -88,9 +86,14 @@ Read the `near` block to see where the view came from:
 | `near.contract` | the account the `get` was sent to |
 | `officialSources` | exchange PoR page, artifact URLs, ardmere report links (see above) |
 | `near.matches` | whether the on-chain `assessment_sha256` equals the file sha256 |
-| `near` record | schema v5 `SnapshotRecord`: roots, `por_stage` (0–3), coverage bps, and `custody_risk_score` (0–100, or 255 = inconclusive) |
+| `near.schemaVersion` | on-chain `schema_version` (live v7-index → **7**) |
+| `near` record (via `get`) | v7 `SnapshotRecord`: roots, `por_stage`, `custody_risk_score`, `total_liability_usd` / `total_reserve_usd` (`0` = unavailable), `btc`/`eth`/`usdt`/`usdc` `_reserve_ratio_bps` (`65535` = unavailable) |
 | `near.custodyRiskScore` | same uint8 as on chain |
 | `scoringSource` | `onchain` when the score is read from `custody_risk_score`; otherwise `recomputed` from the assessment file |
+
+When the user cares about **self-reported reserves**, cite on-chain reserve fields only as *what was anchored with the assessment digest* (not verified solvency). Compare to `totalLiabilityUsd` / `majorCoinReserveRates` in the JSON when useful.
+
+**Legacy:** `por-digest-v5-index.ardmere-demo-1fc2.testnet` still holds pre-`640123e` digests; `near.matches` is **false** against current assessment files. Use v7-index for live checks.
 
 With `POR_NEAR_CONTRACT` unset, the script falls back to the sandbox recording in `fixtures/near-views.json`. That recording is a replay, not chain state; say so if you quote a score from it.
 
@@ -111,12 +114,7 @@ python3 scripts/near_digest.py --contract <contract.testnet> reconcile          
 python3 scripts/near_digest.py --contract <contract.testnet> reconcile --apply  # send
 ```
 
-After upgrading the contract to schema v5, backfill scores on snapshots that were anchored as v4:
-
-```bash
-python3 scripts/near_digest.py --contract <contract.testnet> backfill-custody          # dry run
-python3 scripts/near_digest.py --contract <contract.testnet> backfill-custody --apply  # send
-```
+On **v5-index only**, backfill scores on snapshots that were anchored as v4 (`backfill-custody`). v7-index was anchored with v7 WASM from empty state; use `reconcile --apply` only.
 
 The reconciliation is idempotent: bytes already on chain are skipped, different bytes fail instead of overwriting. `scripts/upstream_check.py` reports drift between the submodule and the manifest and never touches NEAR.
 
