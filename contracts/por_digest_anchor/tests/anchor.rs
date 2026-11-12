@@ -53,6 +53,12 @@ fn anchor(
         hash.to_string(),
         "por-transparency-framework@2026-07-01".to_string(),
         custody_risk_score,
+        0,
+        0,
+        por_digest_anchor::RESERVE_RATIO_UNAVAILABLE,
+        por_digest_anchor::RESERVE_RATIO_UNAVAILABLE,
+        por_digest_anchor::RESERVE_RATIO_UNAVAILABLE,
+        por_digest_anchor::RESERVE_RATIO_UNAVAILABLE,
     );
 }
 
@@ -61,11 +67,26 @@ fn anchor_then_get_returns_the_same_bytes() {
     set_context("owner.sandbox", 7);
     let mut contract = Contract::new();
     let hash = "ab".repeat(32);
-    anchor(&mut contract, "okx", "508756245", &hash, 1, 2, true, 0xab, 10);
+    anchor(
+        &mut contract,
+        "okx",
+        "508756245",
+        &hash,
+        1,
+        2,
+        true,
+        0xab,
+        10,
+    );
     let rec = contract.get("okx".to_string(), "508756245".to_string());
     assert_eq!(rec.assessment_sha256, hash);
     assert_eq!(rec.assessment_sha256.len(), 64);
-    assert_eq!(rec.schema_version, 5);
+    assert_eq!(rec.schema_version, 7);
+    assert_eq!(rec.total_liability_usd, 0);
+    assert_eq!(
+        rec.usdc_reserve_ratio_bps,
+        por_digest_anchor::RESERVE_RATIO_UNAVAILABLE
+    );
     assert_eq!(rec.custody_risk_score, 10);
     assert_eq!(rec.por_stage, 2);
     assert_eq!(rec.artifact_bundle_root, "ab".repeat(32));
@@ -76,20 +97,70 @@ fn anchor_then_get_returns_the_same_bytes() {
 fn second_different_digest_reverts() {
     set_context("owner.sandbox", 4);
     let mut contract = Contract::new();
-    anchor(&mut contract, "okx", "508756245", &"11".repeat(32), 1, 2, true, 0x11, 10);
-    anchor(&mut contract, "okx", "508756245", &"22".repeat(32), 1, 2, true, 0x22, 10);
+    anchor(
+        &mut contract,
+        "okx",
+        "508756245",
+        &"11".repeat(32),
+        1,
+        2,
+        true,
+        0x11,
+        10,
+    );
+    anchor(
+        &mut contract,
+        "okx",
+        "508756245",
+        &"22".repeat(32),
+        1,
+        2,
+        true,
+        0x22,
+        10,
+    );
 }
 
 #[test]
 fn get_latest_follows_the_newest_snapshot() {
     set_context("owner.sandbox", 3);
     let mut contract = Contract::new();
-    anchor(&mut contract, "okx", "older", &"11".repeat(32), 1, 2, true, 0x11, 10);
+    anchor(
+        &mut contract,
+        "okx",
+        "older",
+        &"11".repeat(32),
+        1,
+        2,
+        true,
+        0x11,
+        10,
+    );
     set_context("owner.sandbox", 4);
-    anchor(&mut contract, "okx", "newer", &"22".repeat(32), 2, 2, true, 0x22, 10);
+    anchor(
+        &mut contract,
+        "okx",
+        "newer",
+        &"22".repeat(32),
+        2,
+        2,
+        true,
+        0x22,
+        10,
+    );
     assert_eq!(contract.get_latest("okx".to_string()).snapshot_id, "newer");
     set_context("owner.sandbox", 5);
-    anchor(&mut contract, "okx", "older", &"11".repeat(32), 1, 2, true, 0x11, 10);
+    anchor(
+        &mut contract,
+        "okx",
+        "older",
+        &"11".repeat(32),
+        1,
+        2,
+        true,
+        0x11,
+        10,
+    );
     assert_eq!(contract.get_latest("okx".to_string()).snapshot_id, "newer");
     contract.point_latest("okx".to_string(), "older".to_string());
     assert_eq!(contract.get_latest("okx".to_string()).snapshot_id, "older");
