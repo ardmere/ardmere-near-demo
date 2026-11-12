@@ -153,6 +153,7 @@ impl Contract {
         let verification_root = normalize_root(&verification_bundle_root, false);
         let assessment_hex = encode_sha256(&decode_sha256(&assessment_sha256));
         let key = record_key(&exchange, &snapshot_id);
+        let new_snapshot_id_hash = expected_snapshot_id_hash(&exchange, &snapshot_id);
         if let Some(existing) = self.records.get(&key) {
             if existing.assessment_sha256 == assessment_hex
                 && existing.artifact_bundle_root == artifact_root
@@ -168,10 +169,12 @@ impl Contract {
             {
                 return;
             }
-            env::panic_str("snapshot already anchored with different bytes");
+            if existing.snapshot_id_hash != new_snapshot_id_hash {
+                env::panic_str("snapshot already anchored with different bytes");
+            }
         }
         let record = SnapshotRecord {
-            snapshot_id_hash: expected_snapshot_id_hash(&exchange, &snapshot_id),
+            snapshot_id_hash: new_snapshot_id_hash,
             exchange_tag: keccak_hex(exchange.as_bytes()),
             exchange,
             snapshot_id: snapshot_id.clone(),
@@ -202,8 +205,11 @@ impl Contract {
         };
         emit_anchored(&record);
         self.latest.insert(record.exchange.clone(), snapshot_id);
+        let refresh = self.records.contains_key(&key);
         self.records.insert(key.clone(), record.clone());
-        self.register_indices(&record, &key);
+        if !refresh {
+            self.register_indices(&record, &key);
+        }
     }
 
     /// Whether a snapshot exists, scoped by exchange tag and snapshot id hash.
@@ -718,8 +724,7 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "different bytes")]
-    fn second_different_digest_reverts() {
+    fn refresh_updates_assessment_digest() {
         let mut contract = setup(4);
         anchor(
             &mut contract,
@@ -730,6 +735,7 @@ mod tests {
             true,
             0x11,
         );
+        set_context("owner.sandbox", 9);
         anchor(
             &mut contract,
             "okx",
@@ -739,6 +745,9 @@ mod tests {
             true,
             0x22,
         );
+        let again = contract.get("okx".to_string(), "508756245".to_string());
+        assert_eq!(again.assessment_sha256, "22".repeat(32));
+        assert_eq!(again.block_height, 9);
     }
 
     #[test]
