@@ -204,9 +204,11 @@ Merging the sync PR is a human decision about which snapshots this demo vouches 
 
 ## Tracks
 
-- `thesis` (primary). `THESIS.md` states the claim, the evidence for it, the evidence against it, and the result that would drop it. The page is the re-runnable evidence.
-- `defi`. The same check a trading agent would read before treating a CEX as a venue: a 0–100 custody risk score and the factors for one snapshot. The agent or the person decides whether to trade.
-- `security`. The same check. A hash mismatch or a blocking flag raises the score. The score is the signal. It does not place orders or move funds.
+Submission tracks: `agents`, `defi`, `thesis`. This repo does not settle swaps, prove reserves, or place orders.
+
+- `agents` (primary). A NEAR agent that touches a CEX reads the same `view` and `por-risk-control` JSON (`riskScore`, `near.matches`, `officialSources`) before choosing a venue. The score is input. It is not permission to trade.
+- `defi`. An Intents solver's hedge sits at a CEX. The on-chain index is the disclosure check for that custodial leg. It is not an exchange and it does not settle through Intents.
+- `thesis`. `THESIS.md` states the claim, the evidence for it, the evidence against it, and the result that would drop it. The [three steps](#try-it-in-three-steps) are the re-run. The claim is about CEX PoR disclosure anchored on NEAR, not NEAR usage or token price.
 
 ## Toolchain
 
