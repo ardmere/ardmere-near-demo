@@ -2,7 +2,7 @@
 
 ## What this gives NEAR
 
-Ardmere gives NEAR Intents solvers a framework and data to assess CEX custodial risk, and anchors each PoR snapshot on NEAR so verification rests on a consistent on-chain digest.
+Ardmere gives NEAR Intents solvers a framework and data to assess CEX custodial risk, and anchors each PoR snapshot on NEAR so verification rests on a consistent on-chain digest. In short, NEAR holds a **checkable index of how transparent each anchored CEX PoR snapshot is** — digest, transparency score, stage, and self-reported reserve fields from the assessment — for **on-chain protocol risk parameters** and for **agents** that touch CEX hedging or venue choice. That is **disclosure and custody-transparency input**, not proof of reserve adequacy.
 
 A NEAR Intents solver is a principal, not a matcher. Its own terms of use put it plainly: the solver "provides and maintains its own Liquidity, at its own cost and under its own control" and "bears all market, inventory, hedging, network, execution, and settlement risk as principal" ([Solver Terms of Use](https://docs.near-intents.org/integration/market-makers/solver-terms-of-use), §7.1 and §7.4).
 
@@ -23,13 +23,21 @@ What NEAR contributes to this, and what it does not:
 
 - **Contributes:** the record is readable with a `view` call, with no account, no key and no payment ([step 1](#try-it-in-three-steps) below is exactly that). A hosted API can rate-limit, go down, or change its answer; a `view` call at a block height cannot.
 - **Contributes:** a named account such as `por-digest-v7-index.ardmere-demo-1fc2.testnet` is checkable by reading it, not by trusting a hex string.
+- **Contributes:** a **permissionless CEX PoR transparency layer** on NEAR. Each anchored snapshot exposes `custody_risk_score`, `por_stage`, digest roots, and (schema v7) self-reported USD totals and major-coin ratio bps via `get` / `get_latest`. On-chain protocols can plug those **view** results into risk policy (for example minimum stage, maximum transparency score, or hash match) before routing treasury, hedging, or counterparty exposure — without trusting an exchange API or a hosted scorer.
+- **Contributes:** the same records plus the [`por-risk-control`](skills/por-risk-control/SKILL.md) skill give NEAR **AI agents** a deterministic read path (`por-check.sh` → JSON with `officialSources` and `selfReportedReserves`) for CEX venue checks, PoR Q&A, and pre-flight hedging workflows. That is **transparency-risk input**, not solvency proof and not trade permission.
 - **Does not contribute:** the record does not verify reserves and does not make any exchange's disclosure recomputable. It records how much is checkable.
+
+| Reader on NEAR | Typical use | On-chain hook |
+| --- | --- | --- |
+| Protocol / DAO policy | Gate hedge venue or custodial counterparty | `get_latest`, `custody_risk_score`, `por_stage` |
+| AI agent | Venue pre-check; cite official PoR URLs to users | Skill + same contract `get`; `near.matches` |
+| Intents solver | Hedge custodial leg (see above) | unchanged |
 
 The chain is not what makes a solver safer. It is where the measurement about hedge venues can be read by anyone who needs it, without asking permission.
 
 ---
 
-Public Proof-of-Reserves from mainstream exchanges, in the assessments vendored here, is mostly not something a third party can recompute. At submodule commit `e4400bd` there are 57 snapshots across 19 exchanges: 50 are Stage 0 and carry `UNVERIFIABLE`. OKX is the only exchange at Stage 1 (7 snapshots), and every one of those still carries `NO_CANONICAL_ANCHOR`.
+Public Proof-of-Reserves from mainstream exchanges, in the assessments vendored here, is mostly not something a third party can recompute. At submodule commit pinned in `fixtures/digests.json` (currently `daff626`) there are 57 snapshots across 19 exchanges: 50 are Stage 0 and carry `UNVERIFIABLE`. OKX is the only exchange at Stage 1 (7 snapshots), and every one of those still carries `NO_CANONICAL_ANCHOR`.
 
 NEAR stores the sha256 of each listed assessment. A view call returns the same 32 bytes, so the measurement can be re-hashed and re-queried. The contract does not verify reserves. Anchoring a digest does not make a disclosure verifiable, and it is not a record that exchange disclosure advanced.
 
