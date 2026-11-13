@@ -1,6 +1,6 @@
 ---
 name: por-risk-control
-description: Score CEX custody risk from a public Proof-of-Reserves assessment, its sha256, and a NEAR digest view. Use when a user asks for an exchange's latest PoR snapshot time, a multi-month PoR summary, or a 0–100 custody risk score before choosing a CEX hedge venue. Does not place orders, hold keys, call NEAR Intents, or decide the trade.
+description: Score CEX custody risk from a public Proof-of-Reserves assessment, its sha256, and a NEAR digest view. Use when a user asks for an exchange's latest PoR snapshot time, a multi-month PoR summary, or a 0–100 custody risk score before choosing a CEX hedge venue. For user-facing answers, follow references/response-framework.md (single snapshot, one exchange, or batch with one merged overview table). Does not place orders, hold keys, call NEAR Intents, or decide the trade.
 ---
 
 # PoR risk control
@@ -66,13 +66,15 @@ The script calls `get_latest` over public RPC, then `por-check.sh` on each manif
 
 ## Present results to the user
 
-**Do not write long paragraphs.** Follow [`references/presentation-format.md`](references/presentation-format.md):
+**Do not write long paragraphs.** Follow [`references/response-framework.md`](references/response-framework.md) (route A / B / C), then [`references/presentation-format.md`](references/presentation-format.md) for cell rules (`Unavailable`, factor caps).
 
-1. **Headline table** — exchange, latest snapshot id/time, transparency risk score/level, stage, `near.matches`.
-2. **Official sources table** — exchange PoR page + `publicArtifacts` URLs (+ ardmere report link).
-3. **History table** — one row per snapshot (date, score, level, hash match, top factors).
+| Request | Framework | Output |
+| --- | --- | --- |
+| One assessment file | **A** | `por-check.sh` + single-snapshot tables + disclaimer |
+| One exchange (+ optional months) | **B** | `por-exchange-report.py` markdown + one-line takeaway + disclaimer |
+| Many exchanges | **C** | One **merged** overview table (risk + reserves per row), official-sources table, disclaimer |
 
-Prefer pasting the script's markdown output or mirroring its tables. For a single `por-check`, use the **single snapshot** template in the same file (factors as a small Δ table, max 5 rows).
+For **C**, do not split headline and self-reported reserves into two tables. Prefer `por-exchange-report.py` per exchange for latest fields.
 
 Add `--json` only when another tool consumes the output.
 

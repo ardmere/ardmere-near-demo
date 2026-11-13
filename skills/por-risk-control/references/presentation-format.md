@@ -52,7 +52,11 @@ Cap factors at **5 rows** in chat; say “(+N more)” if needed.
 
 ## Exchange window (`por-exchange-report.py`)
 
-Use script output (`--format markdown`, default) or the same table pattern for **Latest** + **History** sections.
+Use script output (`--format markdown`, default) or the same table pattern for **Latest** + **History** sections. Section order and batch layout: [`response-framework.md`](response-framework.md).
+
+## Batch (many exchanges)
+
+Use **one merged overview table** (risk + stage + `near.matches` + all self-reported reserve columns per row). Do **not** split a separate headline table and reserves table. Full template: [`response-framework.md`](response-framework.md) § Framework C.
 
 ## Forbidden in user-facing text
 
