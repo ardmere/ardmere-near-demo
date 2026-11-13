@@ -6,7 +6,7 @@
 | --- | --- |
 | Problem | A NEAR Intents solver hedges on a CEX. That custodial leg is the solver's own capital. Public PoR is usually not recomputable by a third party. |
 | Product | A NEAR testnet index of those assessments: sha256, transparency score, stage, and self-reported reserve fields. |
-| Upstream | [`ardmere/ardmere.github.io`](https://github.com/ardmere/ardmere.github.io) is the public CEX PoR assessment site. The assessments and stage methodology are developed there, including during this hackathon. This repo pins one commit as a submodule and anchors each assessment sha256 on NEAR. |
+| Upstream | [`ardmere/ardmere.github.io`](https://github.com/ardmere/ardmere.github.io) is the public CEX PoR assessment site. The assessments and stage methodology are developed there. This repo pins one commit as a submodule and anchors each assessment sha256 on NEAR. |
 | NEAR's role | Anyone can `view` the record with no account and no key. The chain names the assessment bytes. It does not prove reserves. |
 | Contract | [`por-digest-v7-index.ardmere-demo-1fc2.testnet`](https://explorer.testnet.near.org/accounts/por-digest-v7-index.ardmere-demo-1fc2.testnet) (schema v7) |
 | Do this | [Three steps](#try-it-in-three-steps) below. Single-file score is step 3. |
@@ -136,7 +136,7 @@ To move the submodule to a newer upstream commit, update the checkout under `ven
 
 ### Assessments and this repo
 
-The assessment files and the PoR stage methodology live in [`ardmere/ardmere.github.io`](https://github.com/ardmere/ardmere.github.io). That repo was updated during the hackathon as well. This repo pins one commit of it as a submodule and does not edit those files.
+The assessment files and the PoR stage methodology live in [`ardmere/ardmere.github.io`](https://github.com/ardmere/ardmere.github.io). This repo pins one commit of it as a submodule and does not edit those files.
 
 This repository's own history starts at 2026-11-05, inside the hackathon window. The first commit imported the NEAR demo from a branch of `ardmere.github.io`; the contract, the scoring script, the dashboard, and `demo/run.sh` arrived in that import and were then extended here.
 
