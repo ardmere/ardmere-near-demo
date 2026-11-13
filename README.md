@@ -58,7 +58,7 @@ Any other row in `fixtures/digests.json` works the same way. All 57 listed snaps
 
 ### What a judge cannot conclude
 
-Step 2 proves the chain names the same bytes as the file. It does not prove the exchange holds reserves. See `THESIS.md` for the claim, the evidence against it, and what result would drop it.
+Step 2 proves the chain names the same bytes as the file. It does not prove the exchange holds reserves. A hash match is not evidence that anchoring made the disclosure recomputable. If the file sha256 disagrees with both `fixtures/digests.json` and the chain, the score floors at 100.
 
 ## What this gives NEAR
 
@@ -204,11 +204,11 @@ Merging the sync PR is a human decision about which snapshots this demo vouches 
 
 ## Tracks
 
-Submission tracks: `agents`, `defi`, `thesis`. This repo does not settle swaps, prove reserves, or place orders.
+Submission tracks: `agents`, `defi`, `open`. This repo does not settle swaps, prove reserves, or place orders.
 
 - `agents` (primary). A NEAR agent that touches a CEX reads the same `view` and `por-risk-control` JSON (`riskScore`, `near.matches`, `officialSources`) before choosing a venue. The score is input. It is not permission to trade.
 - `defi`. An Intents solver's hedge sits at a CEX. The on-chain index is the disclosure check for that custodial leg. It is not an exchange and it does not settle through Intents.
-- `thesis`. `THESIS.md` states the claim, the evidence for it, the evidence against it, and the result that would drop it. The [three steps](#try-it-in-three-steps) are the re-run. The claim is about CEX PoR disclosure anchored on NEAR, not NEAR usage or token price.
+- `open`. The idea does not fit the investment-thesis or spending-control tracks. It is a disclosure index for agents and for hedge-venue choice. The [three steps](#try-it-in-three-steps) are the re-run.
 
 ## Toolchain
 
@@ -268,6 +268,6 @@ From the repo root:
 
 `fixtures/near-views.json` in git is a sandbox recording, not a live chain. The script is the check.
 
-The manifest covers every snapshot from the 19 exchanges in the submodule: Binance, BingX, Bitget, Bitunix, BTCC, Bybit, CoinEx, CoinW, Gate, HTX, Kraken, KuCoin, MEXC, OKX, Ourbit, Phemex, Poloniex, Toobit, and WOOX. Two examples: OKX `508756245` scores 10, `low` (`NO_CANONICAL_ANCHOR` +5 and `HIGH_FREQUENCY_GAP` +5). KuCoin `20261031` scores 99, `critical` (blocking + stage + derived disclosure gaps; same scorer as ardmere.github.io). `fixtures/near-views.json` in git is a sandbox recording of those two snapshots. A full `./demo/run.sh` rewrites it for every listed snapshot. `THESIS.md` states the claim, the evidence for it, the evidence against it, and what result would drop the claim.
+The manifest covers every snapshot from the 19 exchanges in the submodule: Binance, BingX, Bitget, Bitunix, BTCC, Bybit, CoinEx, CoinW, Gate, HTX, Kraken, KuCoin, MEXC, OKX, Ourbit, Phemex, Poloniex, Toobit, and WOOX. Two examples: OKX `508756245` scores 10, `low` (`NO_CANONICAL_ANCHOR` +5 and `HIGH_FREQUENCY_GAP` +5). KuCoin `20261031` scores 99, `critical` (blocking + stage + derived disclosure gaps; same scorer as ardmere.github.io). `fixtures/near-views.json` in git is a sandbox recording of those two snapshots. A full `./demo/run.sh` rewrites it for every listed snapshot. Those scores describe how far a disclosure can be recomputed. They are not a reason to trade, and a matching digest is not proof of reserves.
 
 Accounts the script prints exist only inside that sandbox process. They are not mainnet accounts.
