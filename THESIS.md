@@ -4,11 +4,11 @@ In the public assessments pinned in this repo, mainstream exchange Proof-of-Rese
 
 ## Evidence for
 
-At `ardmere/ardmere.github.io` commit `e4400bd` the submodule holds 57 assessments across 19 exchanges. 50 are Stage 0 and carry `UNVERIFIABLE`: Binance, BingX, Bitget, Bitunix, BTCC, Bybit, CoinEx, CoinW, Gate, HTX, Kraken, KuCoin, MEXC, Ourbit, Phemex, Poloniex, Toobit, and WOOX. The other 7 are OKX, all Stage 1, and each carries `NO_CANONICAL_ANCHOR` and `HIGH_FREQUENCY_GAP`. Stage here is a label for how much of the disclosure a third party can recompute. It is not a credit rating.
+At `ardmere/ardmere.github.io` commit `daff626` (the `sourceCommit` in `fixtures/digests.json`) the submodule holds 57 assessments across 19 exchanges. 50 are Stage 0 and carry `UNVERIFIABLE`: Binance, BingX, Bitget, Bitunix, BTCC, Bybit, CoinEx, CoinW, Gate, HTX, Kraken, KuCoin, MEXC, Ourbit, Phemex, Poloniex, Toobit, and WOOX. The other 7 are OKX, all Stage 1, and each carries `NO_CANONICAL_ANCHOR` and `HIGH_FREQUENCY_GAP`. Stage here is a label for how much of the disclosure a third party can recompute. It is not a credit rating.
 
 `fixtures/digests.json` lists all 57 of those assessments, every exchange the upstream repo publishes at that commit. Anyone can sha256 a listed file and compare it to the manifest. `get_latest` is pointed at the newest snapshot by `snapshotTime` for each exchange.
 
-`por_digest_anchor` stores a Sepolia-aligned snapshot record under `(exchange, snapshot_id)`: the assessment sha256 plus the same bundle roots, stage, coverage, and timing fields as `ArdmerePoRAnchor` schema v4/v6. New anchors set `snapshot_id_hash` to the v6 composite `expectedSnapshotId` (`keccak256` of lowercase exchange, `0x00`, audit id); Sepolia-style queries still accept legacy audit-only hashes until testnet rows are re-anchored. `get` and `get_latest` return the record. The same call works in a local NEAR sandbox, with no exchange RPC and no custody of funds.
+`por_digest_anchor` on testnet (`por-digest-v7-index.ardmere-demo-1fc2.testnet`, schema v7) stores a snapshot record under `(exchange, snapshot_id)`: the assessment sha256 plus bundle roots, stage, coverage, timing, `custody_risk_score`, and self-reported USD / major-coin fields. The field set follows `ArdmerePoRAnchor` on Sepolia. New anchors set `snapshot_id_hash` to the v6 composite `expectedSnapshotId` (`keccak256` of lowercase exchange, `0x00`, audit id); Sepolia-style queries still accept legacy audit-only hashes until testnet rows are re-anchored. `get` and `get_latest` return the record. The same call works in a local NEAR sandbox, with no exchange RPC and no custody of funds.
 
 `skills/por-risk-control/scripts/por-check.sh` reads one file, checks the hash, and prints `riskScore`, `riskLevel`, and `factors`. The dashboard shows that score next to the file hash and the view result.
 
@@ -18,7 +18,7 @@ The contract stores a digest of an off-chain assessment. It does not prove reser
 
 The existing registry anchors on Ethereum Sepolia. A second chain holding the same kind of hash does not make the underlying custody claim true.
 
-The score is a reading of flags already on the public assessment. It is not a new reserve proof, and it does not decide a trade. OKX lands at 10 (`low`) because the hash matches, effective PoR is true, and the only flags are `NO_CANONICAL_ANCHOR` and `HIGH_FREQUENCY_GAP`. KuCoin lands at 75 (`high`) because the file carries `UNVERIFIABLE` and the stage is Stage 0. Those numbers describe the pinned assessments. They are not a reason to trade.
+The score is a reading of flags already on the public assessment. It is not a new reserve proof, and it does not decide a trade. OKX `508756245` lands at 10 (`low`) because the hash matches, effective PoR is true, and the only flags are `NO_CANONICAL_ANCHOR` and `HIGH_FREQUENCY_GAP`. KuCoin `20261031` lands at 99 (`critical`) because the file carries `UNVERIFIABLE`, the stage is Stage 0, and the disclosure gaps add further points. Those numbers describe the pinned assessments. They are not a reason to trade.
 
 ## What would drop the claim
 
