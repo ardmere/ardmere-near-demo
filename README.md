@@ -6,6 +6,7 @@
 | --- | --- |
 | Problem | A NEAR Intents solver hedges on a CEX. That custodial leg is the solver's own capital. Public PoR is usually not recomputable by a third party. |
 | Product | A NEAR testnet index of those assessments: sha256, transparency score, stage, and self-reported reserve fields. |
+| Upstream | [`ardmere/ardmere.github.io`](https://github.com/ardmere/ardmere.github.io) is the existing CEX PoR assessment library. This repo pins it as a submodule and anchors each assessment sha256 on NEAR. The judged work is that NEAR read path, not the upstream methodology. |
 | NEAR's role | Anyone can `view` the record with no account and no key. The chain names the assessment bytes. It does not prove reserves. |
 | Contract | [`por-digest-v7-index.ardmere-demo-1fc2.testnet`](https://explorer.testnet.near.org/accounts/por-digest-v7-index.ardmere-demo-1fc2.testnet) (schema v7) |
 | Do this | [Three steps](#try-it-in-three-steps) below. Single-file score is step 3. |
