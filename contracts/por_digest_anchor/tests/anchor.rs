@@ -93,8 +93,7 @@ fn anchor_then_get_returns_the_same_bytes() {
 }
 
 #[test]
-#[should_panic(expected = "different bytes")]
-fn second_different_digest_reverts() {
+fn refresh_updates_assessment_digest() {
     set_context("owner.sandbox", 4);
     let mut contract = Contract::new();
     anchor(
@@ -108,6 +107,7 @@ fn second_different_digest_reverts() {
         0x11,
         10,
     );
+    set_context("owner.sandbox", 9);
     anchor(
         &mut contract,
         "okx",
@@ -119,6 +119,9 @@ fn second_different_digest_reverts() {
         0x22,
         10,
     );
+    let again = contract.get("okx".to_string(), "508756245".to_string());
+    assert_eq!(again.assessment_sha256, "22".repeat(32));
+    assert_eq!(again.block_height, 9);
 }
 
 #[test]

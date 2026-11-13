@@ -336,11 +336,19 @@ def cmd_reconcile(opts):
             if same_integrity(record, args):
                 print(f"ok       {label}: already anchored with the same bytes")
                 skipped += 1
-            else:
+                continue
+            if not opts.refresh:
                 problems.append(
                     f"{label}: on-chain record differs from assessment roots/digest; "
-                    "refusing to overwrite an anchored snapshot"
+                    "refusing to overwrite (pass --refresh to re-anchor same snapshot_id)"
                 )
+                continue
+            if not opts.apply:
+                print(f"would refresh {label} ({file_sha})")
+                continue
+            anchor(opts.contract, network, assessment, file_sha)
+            print(f"refreshed {label} ({file_sha})")
+            anchored += 1
             continue
         if not missing:
             problems.append(f"{label}: {detail}")
@@ -438,6 +446,11 @@ def main(argv):
 
     rec = sub.add_parser("reconcile", help="anchor what is missing and refuse what conflicts")
     rec.add_argument("--apply", action="store_true", help="send anchor transactions (default is dry run)")
+    rec.add_argument(
+        "--refresh",
+        action="store_true",
+        help="re-anchor when assessment bytes changed but snapshot_id is unchanged",
+    )
     rec.set_defaults(func=cmd_reconcile)
 
     backfill = sub.add_parser(
