@@ -8,7 +8,8 @@
 | Product | A NEAR testnet index of those assessments: sha256, transparency score, stage, and self-reported reserve fields. |
 | NEAR's role | Anyone can `view` the record with no account and no key. The chain names the assessment bytes. It does not prove reserves. |
 | Contract | [`por-digest-v7-index.ardmere-demo-1fc2.testnet`](https://explorer.testnet.near.org/accounts/por-digest-v7-index.ardmere-demo-1fc2.testnet) (schema v7) |
-| Do this | [Three steps](#try-it-in-three-steps) below. |
+| Do this | [Three steps](#try-it-in-three-steps) below. Single-file score is step 3. |
+| Agent | [Agent path](#agent-path-por-risk-control): one exchange or a batch. Not part of the three steps. |
 | See this | OKX latest: `custody_risk_score` **10**, file sha256 **equals** the chain, `por-check` prints `"riskScore": 10`, `"near.matches": true`. |
 
 ## Try it in three steps
@@ -59,6 +60,21 @@ Any other row in `fixtures/digests.json` works the same way. All 57 listed snaps
 ### What a judge cannot conclude
 
 Step 2 proves the chain names the same bytes as the file. It does not prove the exchange holds reserves. A hash match is not evidence that anchoring made the disclosure recomputable. If the file sha256 disagrees with both `fixtures/digests.json` and the chain, the score floors at 100.
+
+## Agent path: `por-risk-control`
+
+Use this when the task is an exchange PoR assessment, not the hash check above. Step 3 already scores one file.
+
+1. Clone with submodules, as in [step 2](#try-it-in-three-steps). Open that directory as the workspace root. `.cursor/skills/por-risk-control` points at `skills/por-risk-control`.
+2. Set `POR_NEAR_CONTRACT=por-digest-v7-index.ardmere-demo-1fc2.testnet` for a live read. `python3` only. If the variable is unset, `por-check.sh` reads `fixtures/near-views.json` and `near.live` is false.
+3. One exchange, latest snapshot plus optional history:
+
+```bash
+POR_NEAR_CONTRACT=por-digest-v7-index.ardmere-demo-1fc2.testnet \
+  python3 skills/por-risk-control/scripts/por-exchange-report.py binance --months 3
+```
+
+4. User-facing layout is [`skills/por-risk-control/references/response-framework.md`](skills/por-risk-control/references/response-framework.md): **A** one snapshot, **B** one exchange, **C** many exchanges in one merged table. Missing self-reported fields are `Unavailable`. The score is transparency risk (higher = worse disclosure), not permission to trade.
 
 ## What this gives NEAR
 
@@ -132,22 +148,6 @@ Changes made in this repo after the import:
 - The manifest now covers every assessment the submodule pins (57 across 19 exchanges), and all of them are anchored on testnet.
 
 Baseline, not judged as new work: the upstream assessments and the PoR Stage methodology in `ardmere.github.io`. No third-party libraries are vendored into `src`; the contract depends on `near-sdk` from crates.io, and the Python tests use only the standard library.
-
-## Cursor: `por-risk-control` skill
-
-This repo ships a symlink so Cursor can discover the skill in place:
-
-- `.cursor/skills/por-risk-control` → `skills/por-risk-control` (same `SKILL.md` and `scripts/` as the CLI)
-
-Open this folder as the workspace root in Cursor; the agent can use it when you ask for a custody risk score, the latest PoR snapshot time for an exchange, or a multi-month summary. Runnable checks:
-
-```bash
-POR_NEAR_CONTRACT=por-digest-v7-index.ardmere-demo-1fc2.testnet \
-  skills/por-risk-control/scripts/por-check.sh \
-  vendor/ardmere.github.io/docs/reports/okx/508756245-assessment.json
-
-python3 skills/por-risk-control/scripts/por-exchange-report.py binance --months 3
-```
 
 ## Checking your own inclusion proof
 
