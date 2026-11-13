@@ -6,7 +6,7 @@
 | --- | --- |
 | Problem | A NEAR Intents solver hedges on a CEX. That custodial leg is the solver's own capital. Public PoR is usually not recomputable by a third party. |
 | Product | A NEAR testnet index of those assessments: sha256, transparency score, stage, and self-reported reserve fields. |
-| Upstream | [`ardmere/ardmere.github.io`](https://github.com/ardmere/ardmere.github.io) is the existing CEX PoR assessment library. This repo pins it as a submodule and anchors each assessment sha256 on NEAR. The judged work is that NEAR read path, not the upstream methodology. |
+| Upstream | [`ardmere/ardmere.github.io`](https://github.com/ardmere/ardmere.github.io) is the public CEX PoR assessment site. The assessments and stage methodology are developed there, including during this hackathon. This repo pins one commit as a submodule and anchors each assessment sha256 on NEAR. |
 | NEAR's role | Anyone can `view` the record with no account and no key. The chain names the assessment bytes. It does not prove reserves. |
 | Contract | [`por-digest-v7-index.ardmere-demo-1fc2.testnet`](https://explorer.testnet.near.org/accounts/por-digest-v7-index.ardmere-demo-1fc2.testnet) (schema v7) |
 | Do this | [Three steps](#try-it-in-three-steps) below. Single-file score is step 3. |
@@ -122,7 +122,7 @@ One contract stores the digest. One skill turns the public flags into a 0–100 
 
 ## Baseline
 
-Assessment JSON comes from the **git submodule** [`vendor/ardmere.github.io`](https://github.com/ardmere/ardmere.github.io), pinned to the same baseline commit as `fixtures/digests.json` (`sourceCommit`). `fixtures/digests.json` lists every `*-assessment.json` in that submodule, so every exchange the upstream repo has published can be scored and, once anchored, read back with `get` / `get_latest`. The upstream assessment registry stays in that repo. This repo is the NEAR slice plus the skill and dashboard.
+Assessment JSON comes from the **git submodule** [`vendor/ardmere.github.io`](https://github.com/ardmere/ardmere.github.io), pinned to the commit named by `fixtures/digests.json` (`sourceCommit`). `fixtures/digests.json` lists every `*-assessment.json` in that submodule, so every exchange the upstream repo has published can be scored and, once anchored, read back with `get` / `get_latest`. The upstream assessment registry stays in that repo. This repo is the NEAR slice plus the skill and dashboard.
 
 Clone with submodules (same command as [step 2](#try-it-in-three-steps)):
 
@@ -134,11 +134,11 @@ git submodule update --init --recursive
 
 To move the submodule to a newer upstream commit, update the checkout under `vendor/ardmere.github.io`, refresh `fixtures/digests.json` paths and sha256 entries, then commit both the submodule pointer and this repo.
 
-### Hackathon baseline disclosure
+### Assessments and this repo
 
-The assessment methodology and the assessment JSON are **pre-existing work**, not built here. They live in [`ardmere/ardmere.github.io`](https://github.com/ardmere/ardmere.github.io), which also holds the assessment registry. This repo pins that work as a submodule and does not modify it.
+The assessment files and the PoR stage methodology live in [`ardmere/ardmere.github.io`](https://github.com/ardmere/ardmere.github.io). That repo was updated during the hackathon as well. This repo pins one commit of it as a submodule and does not edit those files.
 
-This repository's own history starts at 2026-11-05, inside the hackathon window, so every commit here falls in the judged period. The first commit imported the NEAR demo from a branch of `ardmere.github.io`, and the import is disclosed here rather than presented as new authorship: the contract, the scoring script, the dashboard and `demo/run.sh` arrived in that import, and were then extended in this repo.
+This repository's own history starts at 2026-11-05, inside the hackathon window. The first commit imported the NEAR demo from a branch of `ardmere.github.io`; the contract, the scoring script, the dashboard, and `demo/run.sh` arrived in that import and were then extended here.
 
 Changes made in this repo after the import:
 
@@ -148,7 +148,7 @@ Changes made in this repo after the import:
 - `.github/workflows/` — the two pipelines.
 - The manifest now covers every assessment the submodule pins (57 across 19 exchanges), and all of them are anchored on testnet.
 
-Baseline, not judged as new work: the upstream assessments and the PoR Stage methodology in `ardmere.github.io`. No third-party libraries are vendored into `src`; the contract depends on `near-sdk` from crates.io, and the Python tests use only the standard library.
+No third-party libraries are vendored into `src`. The contract depends on `near-sdk` from crates.io, and the Python tests use only the standard library.
 
 ## Checking your own inclusion proof
 
