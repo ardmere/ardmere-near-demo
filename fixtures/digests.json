@@ -1,6 +1,6 @@
 {
   "sourceRepo": "ardmere/ardmere.github.io",
-  "sourceCommit": "daff626015e5720a114925e691b0ccb7a755fb2c",
+  "sourceCommit": "7a86fc4b62fcd60b4ffc2b57d87fa6ab8cf80ded",
   "assessments": [
     {
       "path": "vendor/ardmere.github.io/docs/reports/binance/PR01APR26-assessment.json",
@@ -109,6 +109,18 @@
       "snapshotTime": "2026-11-04T00:00:00Z",
       "reportUrl": "https://ardmere.github.io/docs/reports/binance/PR04NOV26-transparency-report.html",
       "expectedSnapshotId": "8f69d9a060188505883fecb6b54ea29b716b1fe58221fc6bf4868aaedd7f8720"
+    },
+    {
+      "path": "vendor/ardmere.github.io/docs/reports/binance/PR12NOV26-assessment.json",
+      "exchange": "binance",
+      "snapshotId": "PR12NOV26",
+      "sha256": "427dba2d305784c9ed61cbf383de28f776c4ecb22144ebf16fa357e17f84bacf",
+      "porStage": "Stage 0",
+      "effectivePor": false,
+      "methodologyVersion": "por-transparency-framework@2026-07-01",
+      "snapshotTime": "2026-11-12T00:00:00Z",
+      "reportUrl": "https://ardmere.github.io/docs/reports/binance/PR12NOV26-transparency-report.html",
+      "expectedSnapshotId": "e0cbbc36668618dced5cc703e0b7d1c16eefe2d4e1d9432ce04364cd357fcb77"
     },
     {
       "path": "vendor/ardmere.github.io/docs/reports/bingx/20260815-assessment.json",
