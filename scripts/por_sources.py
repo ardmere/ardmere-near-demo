@@ -71,10 +71,17 @@ def official_sources(
                 }
             )
 
+    public_por_api = assessment.get("publicPoRApi")
+    if isinstance(public_por_api, str):
+        public_por_api = public_por_api.strip() or None
+    else:
+        public_por_api = None
+
     out: dict[str, Any] = {
         "exchange": exchange,
         "snapshotId": str(snapshot_id) if snapshot_id is not None else None,
         "exchangePorPage": _registry_por_page(exchange, repo_root),
+        "publicPoRApi": public_por_api,
         "upstreamVerifierRepos": _registry_repos(exchange, repo_root),
         "publicArtifacts": artifact_urls,
     }

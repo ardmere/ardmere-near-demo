@@ -39,7 +39,7 @@ POR_NEAR_CONTRACT=por-digest-v7-index.ardmere-demo-1fc2.testnet \
   vendor/ardmere.github.io/docs/reports/okx/508756245-assessment.json
 ```
 
-Default live testnet contract: **`por-digest-v7-index.ardmere-demo-1fc2.testnet`** (schema **v7**, 58 snapshots at submodule commit pinned in `fixtures/digests.json`, currently `7a86fc4`). Includes `custody_risk_score` plus self-reported USD totals and major-coin reserve ratio bps. `por-exchange-report.py` uses the same default when `--contract` is omitted.
+Default live testnet contract: **`por-digest-v7-index.ardmere-demo-1fc2.testnet`** (schema **v7**, 59 snapshots at submodule commit pinned in `fixtures/digests.json`, currently `be220a5`). Includes `custody_risk_score` plus self-reported USD totals and major-coin reserve ratio bps. `por-exchange-report.py` uses the same default when `--contract` is omitted.
 
 Equivalent one-liner without the script (same contract/method as README Step 1):
 
@@ -56,11 +56,12 @@ Every `por-check` JSON includes **`officialSources`** so the user can cross-chec
 | Field | Meaning |
 | --- | --- |
 | `exchangePorPage` | Exchange official PoR landing page (`config/exchanges/registry.yaml`) |
+| `publicPoRApi` | Documented permissionless PoR HTTP API URL from the assessment, or `null` → show **Unavailable** |
 | `publicArtifacts[]` | Permissionless URLs from the assessment (`artifacts.present`: BAPI, wallet zip, …) |
 | `upstreamVerifierRepos[]` | Exchange OSS verifier repos (registry) |
 | `ardmereAssessment` / `ardmereTransparencyReport` | Links to the vendored public evaluation files |
 
-When answering, **always cite** `exchangePorPage` and at least the main `publicArtifacts` URLs when giving a custody risk score, and say that the score is ardmere's recompute/chain read—not the exchange's own rating.
+When answering, **always cite** `exchangePorPage`, **Public PoR API** (`publicPoRApi` or **Unavailable**), and at least the main `publicArtifacts` URLs when giving a custody risk score, and say that the score is ardmere's recompute/chain read—not the exchange's own rating. Put API under official-sources tables (Framework A/B/C.3), not in the batch overview.
 
 ## Exchange questions (latest time, recent months)
 

@@ -30,7 +30,7 @@ class PorSnapshot(unittest.TestCase):
         self.assertEqual(len(args["artifact_bundle_root"]), 64)
         self.assertEqual(len(args["verification_bundle_root"]), 64)
         self.assertNotEqual(args["artifact_bundle_root"], "0" * 64)
-        self.assertEqual(args["custody_risk_score"], 10)
+        self.assertEqual(args["custody_risk_score"], 15)
         self.assertEqual(
             expected_snapshot_id_hex(args["exchange"], args["snapshot_id"]),
             expected_snapshot_id_hex("okx", "508756245"),
@@ -43,7 +43,7 @@ class PorSnapshot(unittest.TestCase):
         assessment = json.loads(path.read_text())
         digest = hashlib.sha256(path.read_bytes()).hexdigest()
         args = build_anchor_args(assessment, digest)
-        self.assertEqual(args["custody_risk_score"], 99)
+        self.assertEqual(args["custody_risk_score"], 100)
 
 
 if __name__ == "__main__":

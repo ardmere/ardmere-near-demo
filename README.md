@@ -11,7 +11,7 @@
 | Contract | [`por-digest-v7-index.ardmere-demo-1fc2.testnet`](https://explorer.testnet.near.org/accounts/por-digest-v7-index.ardmere-demo-1fc2.testnet) (schema v7) |
 | Do this | [Three steps](#try-it-in-three-steps) below. Single-file score is step 3. |
 | Agent | [Agent path](#agent-path-por-risk-control): one exchange or a batch. Not part of the three steps. |
-| See this | OKX latest: `custody_risk_score` **10**, file sha256 **equals** the chain, `por-check` prints `"riskScore": 10`, `"near.matches": true`. |
+| See this | OKX latest: `custody_risk_score` **15**, file sha256 **equals** the chain, `por-check` prints `"riskScore": 15`, `"near.matches": true`. |
 
 ## Try it in three steps
 
@@ -32,7 +32,7 @@ curl -sS -X POST https://rpc.testnet.fastnear.com \
 
 `args_base64` is the base64 of `{"exchange":"okx"}`. See the account on [testnet explorer](https://explorer.testnet.near.org/accounts/por-digest-v7-index.ardmere-demo-1fc2.testnet).
 
-Expected JSON includes `"exchange":"okx"`, `"snapshot_id":"508756245"`, `"assessment_sha256":"c9247481ef0a2958cae520c11c88c9fceae43997e945ee6a6ea6d021358414a1"`, `"custody_risk_score":10`, `"por_stage":2`, `"schema_version":7`. `por_stage` 2 means Stage 1.
+Expected JSON includes `"exchange":"okx"`, `"snapshot_id":"508756245"`, `"assessment_sha256":"1867c97cbbf2a34841acbe0da20e381f7c46c042cce1dd65f2dc21a2f5d96bae"`, `"custody_risk_score":15`, `"por_stage":2`, `"schema_version":7`. `por_stage` 2 means Stage 1.
 
 Other read-only methods on the same contract: `get` (exchange + plaintext audit id), `expected_snapshot_id`, `get_snapshot_count`, `get_snapshot_id_at`, and `get_snapshot`. Each row in `fixtures/digests.json` carries `expectedSnapshotId`. After `reconcile --apply`, `point_latest` chooses which snapshot `get_latest` returns.
 
@@ -44,7 +44,7 @@ cd ardmere-near-demo
 sha256sum vendor/ardmere.github.io/docs/reports/okx/508756245-assessment.json
 ```
 
-Expected: `c9247481ef0a2958cae520c11c88c9fceae43997e945ee6a6ea6d021358414a1`, the same hex as Step 1. The bytes you hashed are the bytes the chain names.
+Expected: `1867c97cbbf2a34841acbe0da20e381f7c46c042cce1dd65f2dc21a2f5d96bae`, the same hex as Step 1. The bytes you hashed are the bytes the chain names.
 
 **Step 3 — score that file against the live contract.** `python3` only.
 
@@ -54,9 +54,9 @@ POR_NEAR_CONTRACT=por-digest-v7-index.ardmere-demo-1fc2.testnet \
   vendor/ardmere.github.io/docs/reports/okx/508756245-assessment.json
 ```
 
-Expected: `"riskScore": 10`, `"riskLevel": "low"`, `"near": {"live": true, "matches": true, ...}`. `live: true` means this run called the contract, not `fixtures/near-views.json`.
+Expected: `"riskScore": 15`, `"riskLevel": "low"`, `"near": {"live": true, "matches": true, ...}`. `live: true` means this run called the contract, not `fixtures/near-views.json`.
 
-Any other row in `fixtures/digests.json` works the same way. All 58 listed snapshots are on this contract.
+Any other row in `fixtures/digests.json` works the same way. All 59 listed snapshots are on this contract.
 
 ### What a judge cannot conclude
 
@@ -92,7 +92,7 @@ So the solver carries two exposures, and only one of them is on chain:
 | User ↔ solver | none: the swap settles atomically, or it refunds | no |
 | Solver ↔ exchange, when hedging | **custodial**: the solver's own capital sits at the venue | **yes** |
 
-The second one is why a reserve assessment has a reader here. A solver choosing where to hedge is choosing where to leave capital, and the 58 assessments vendored in this repo say what is currently checkable about those venues: 51 of 58 are Stage 0 with `UNVERIFIABLE`, meaning a third party cannot recompute the disclosure. That is a fact a solver can cite when picking a hedge venue — the same fact whether the reader is a solver, an agent, or a person.
+The second one is why a reserve assessment has a reader here. A solver choosing where to hedge is choosing where to leave capital, and the 59 assessments vendored in this repo say what is currently checkable about those venues: 52 of 59 are Stage 0 with `UNVERIFIABLE`, meaning a third party cannot recompute the disclosure. That is a fact a solver can cite when picking a hedge venue — the same fact whether the reader is a solver, an agent, or a person.
 
 Ardmere anchors the sha256 of each exchange-published snapshot on NEAR (`por-digest-v7-index.ardmere-demo-1fc2.testnet`, schema v7: digest, `custody_risk_score`, and self-reported USD / major-coin reserve fields from the assessment). Anyone verifying a hedge venue can hash the local assessment file and compare it to that on-chain digest — without calling the exchange's API.
 
@@ -114,7 +114,7 @@ The chain is not what makes a solver safer. It is where the measurement about he
 
 ---
 
-Public Proof-of-Reserves from mainstream exchanges, in the assessments vendored here, is mostly not something a third party can recompute. At submodule commit pinned in `fixtures/digests.json` (currently `7a86fc4`) there are 58 snapshots across 19 exchanges: 51 are Stage 0 and carry `UNVERIFIABLE`. OKX is the only exchange at Stage 1 (7 snapshots), and every one of those still carries `NO_CANONICAL_ANCHOR`.
+Public Proof-of-Reserves from mainstream exchanges, in the assessments vendored here, is mostly not something a third party can recompute. At submodule commit pinned in `fixtures/digests.json` (currently `be220a5`) there are 59 snapshots across 19 exchanges: 52 are Stage 0 and carry `UNVERIFIABLE`. OKX is the only exchange at Stage 1 (7 snapshots), and every one of those still carries `NO_CANONICAL_ANCHOR`.
 
 NEAR stores the sha256 of each listed assessment. A view call returns the same 32 bytes, so the measurement can be re-hashed and re-queried. The contract does not verify reserves. Anchoring a digest does not make a disclosure verifiable, and it is not a record that exchange disclosure advanced.
 
@@ -146,7 +146,7 @@ Changes made in this repo after the import:
 - `skills/por-risk-control/scripts/inclusion_check.py` and `tests/` — local verification of a user's own inclusion proof.
 - `contracts/por_digest_anchor` — `point_latest`, and the tests that pin `get_latest` behaviour.
 - `.github/workflows/` — the two pipelines.
-- The manifest now covers every assessment the submodule pins (58 across 19 exchanges), and all of them are anchored on testnet.
+- The manifest now covers every assessment the submodule pins (59 across 19 exchanges), and all of them are anchored on testnet.
 
 No third-party libraries are vendored into `src`. The contract depends on `near-sdk` from crates.io, and the Python tests use only the standard library.
 
@@ -183,19 +183,19 @@ Three separate roles. Nothing here writes to mainnet.
 | Role | Command | Key |
 | --- | --- | --- |
 | Detect upstream drift | `python3 scripts/upstream_check.py` | none |
-| Anchor what is missing on testnet | `python3 scripts/near_digest.py --contract <c.testnet> reconcile --apply` | owner |
+| Anchor / refresh on testnet | `python3 scripts/near_digest.py --contract <c.testnet> reconcile --refresh --apply` | owner |
 | Read a score | `POR_NEAR_CONTRACT=<c.testnet> skills/por-risk-control/scripts/por-check.sh <file>` | none |
 
 `scripts/upstream_check.py` only reads the submodule and the manifest. `scripts/near_digest.py` skips a snapshot already on chain with the same bytes. When the assessment bytes for the same `snapshot_id` change, `reconcile --refresh --apply` updates that record. Without `--refresh`, a byte mismatch is reported and left in place. Neither command is a timer; the trigger is a manifest change, not a clock.
 
-**Live contract (schema v7):** **`por-digest-v7-index.ardmere-demo-1fc2.testnet`** — 58 snapshots from the submodule commit in `fixtures/digests.json` (`sourceCommit`, currently `7a86fc4`). `SnapshotRecord` includes `custody_risk_score` (**0–100**, **255** = inconclusive), `total_liability_usd` / `total_reserve_usd` (`u128`, `0` = unavailable), and `btc` / `eth` / `usdt` / `usdc` `_reserve_ratio_bps` (`u16`, `10000` = 100%, `65535` = unavailable), aligned with Sepolia v7. Set `POR_NEAR_CONTRACT` and `vars.NEAR_CONTRACT_ID` (CI) to this account. `scripts/por_snapshot.py` packs reserve fields from assessment JSON.
+**Live contract (schema v7):** **`por-digest-v7-index.ardmere-demo-1fc2.testnet`** — 59 snapshots from the submodule commit in `fixtures/digests.json` (`sourceCommit`, currently `be220a5`). `SnapshotRecord` includes `custody_risk_score` (**0–100**, **255** = inconclusive), `total_liability_usd` / `total_reserve_usd` (`u128`, `0` = unavailable), and `btc` / `eth` / `usdt` / `usdc` `_reserve_ratio_bps` (`u16`, `10000` = 100%, `65535` = unavailable), aligned with Sepolia v7. Set `POR_NEAR_CONTRACT` and `vars.NEAR_CONTRACT_ID` (CI) to this account. `scripts/por_snapshot.py` packs reserve fields from assessment JSON.
 
 **Legacy testnet accounts (read-only history):** **`por-digest-v5-index.ardmere-demo-1fc2.testnet`** (schema v5, old assessment sha256 — `near.matches` false vs current files). **`por-digest-v4-index.ardmere-demo-1fc2.testnet`** (schema v4, no on-chain custody score). Do **not** upgrade WASM in-place across schema versions; use a **new** subaccount, `new()`, then `reconcile --apply`.
 
 Two workflows wire this up:
 
 - `.github/workflows/upstream-check.yml` runs nightly, advances the submodule in the CI checkout, and opens `cursor/upstream-sync` when a listed assessment changed. No secrets.
-- `.github/workflows/anchor-testnet.yml` runs on `main` when the manifest or the submodule pointer moves, and anchors only what testnet is missing. It defaults `NEAR_CONTRACT_ID` to `por-digest-v7-index.ardmere-demo-1fc2.testnet` (override with `vars.NEAR_CONTRACT_ID`), needs `secrets.NEAR_TESTNET_OWNER_KEY` for the **v7-index contract account**, writes the key to a temporary keychain, and deletes it afterwards.
+- `.github/workflows/anchor-testnet.yml` runs on `main` when the manifest or the submodule pointer moves, and runs `reconcile --refresh --apply` (new rows and same-`snapshot_id` byte updates). It defaults `NEAR_CONTRACT_ID` to `por-digest-v7-index.ardmere-demo-1fc2.testnet` (override with `vars.NEAR_CONTRACT_ID`), needs `secrets.NEAR_TESTNET_OWNER_KEY` for the **v7-index contract account**, writes the key to a temporary keychain, and deletes it afterwards.
 
 Merging the sync PR is a human decision about which snapshots this demo vouches for, and it is what triggers anchoring. The demo therefore becomes the publisher of the NEAR records it serves; the upstream repo stays the source of the assessments.
 
@@ -269,6 +269,6 @@ From the repo root:
 
 `fixtures/near-views.json` in git is a sandbox recording, not a live chain. The script is the check.
 
-The manifest covers every snapshot from the 19 exchanges in the submodule: Binance, BingX, Bitget, Bitunix, BTCC, Bybit, CoinEx, CoinW, Gate, HTX, Kraken, KuCoin, MEXC, OKX, Ourbit, Phemex, Poloniex, Toobit, and WOOX. Two examples: OKX `508756245` scores 10, `low` (`NO_CANONICAL_ANCHOR` +5 and `HIGH_FREQUENCY_GAP` +5). KuCoin `20261031` scores 99, `critical` (blocking + stage + derived disclosure gaps; same scorer as ardmere.github.io). `fixtures/near-views.json` in git is a sandbox recording of those two snapshots. A full `./demo/run.sh` rewrites it for every listed snapshot. Those scores describe how far a disclosure can be recomputed. They are not a reason to trade, and a matching digest is not proof of reserves.
+The manifest covers every snapshot from the 19 exchanges in the submodule: Binance, BingX, Bitget, Bitunix, BTCC, Bybit, CoinEx, CoinW, Gate, HTX, Kraken, KuCoin, MEXC, OKX, Ourbit, Phemex, Poloniex, Toobit, and WOOX. Two examples: OKX `508756245` scores 15, `low` (`NO_CANONICAL_ANCHOR` +5, `HIGH_FREQUENCY_GAP` +5, `NO_PUBLIC_POR_API` +5). KuCoin `20261031` scores 100, `critical` (blocking + stage + derived disclosure gaps; same scorer as ardmere.github.io). `fixtures/near-views.json` in git is a sandbox recording of those two snapshots. A full `./demo/run.sh` rewrites it for every listed snapshot. Those scores describe how far a disclosure can be recomputed. They are not a reason to trade, and a matching digest is not proof of reserves.
 
 Accounts the script prints exist only inside that sandbox process. They are not mainnet accounts.

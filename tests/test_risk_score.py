@@ -29,9 +29,10 @@ class RiskScore(unittest.TestCase):
             self.skipTest("submodule missing")
         assessment = json.loads(path.read_text())
         scored = score_from_assessment(assessment)
-        self.assertEqual(scored["riskScore"], 10)
+        self.assertEqual(scored["riskScore"], 15)
         self.assertEqual(scored["riskLevel"], "low")
-        self.assertEqual(custody_risk_score_for_anchor(assessment), 10)
+        self.assertEqual(custody_risk_score_for_anchor(assessment), 15)
+        self.assertIn("NO_PUBLIC_POR_API", scored["riskFlags"])
 
     def test_kucoin_example(self):
         path = ROOT / "vendor/ardmere.github.io/docs/reports/kucoin/20261031-assessment.json"
@@ -39,10 +40,10 @@ class RiskScore(unittest.TestCase):
             self.skipTest("submodule missing")
         assessment = json.loads(path.read_text())
         scored = score_from_assessment(assessment)
-        self.assertEqual(scored["riskScore"], 99)
+        self.assertEqual(scored["riskScore"], 100)
         self.assertEqual(scored["riskLevel"], "critical")
         self.assertEqual(scored["scoreSemantics"]["kind"], "transparency_risk")
-        self.assertEqual(custody_risk_score_for_anchor(assessment), 99)
+        self.assertEqual(custody_risk_score_for_anchor(assessment), 100)
 
     def test_bybit_main_site_parity(self):
         path = ROOT / "vendor/ardmere.github.io/docs/reports/bybit/2026102706-assessment.json"
@@ -50,7 +51,7 @@ class RiskScore(unittest.TestCase):
             self.skipTest("submodule missing")
         assessment = json.loads(path.read_text())
         scored = score_from_assessment(assessment)
-        self.assertEqual(scored["riskScore"], 99)
+        self.assertEqual(scored["riskScore"], 100)
 
 
 if __name__ == "__main__":

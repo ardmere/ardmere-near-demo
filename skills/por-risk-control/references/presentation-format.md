@@ -43,10 +43,13 @@ Use a small **two-table** block (totals + coin ratios). Do not bury these number
 | Source | Link |
 | --- | --- |
 | Exchange PoR page | {exchangePorPage} |
+| Public PoR API | {publicPoRApi URL or **Unavailable**} |
 | {artifact kind} | {url} |
 | ardmere assessment | {ardmereAssessment} |
 | ardmere report | {ardmereTransparencyReport} |
 ```
+
+`publicPoRApi` comes from `officialSources.publicPoRApi` (assessment field: documented permissionless PoR HTTP endpoint, or `null`).
 
 Cap factors at **5 rows** in chat; say “(+N more)” if needed.
 
