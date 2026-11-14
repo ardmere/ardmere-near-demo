@@ -4,10 +4,10 @@
 
 | | |
 | --- | --- |
-| Problem | A NEAR Intents solver hedges on a CEX. That custodial leg is the solver's own capital. Public PoR is usually not recomputable by a third party. |
-| Product | A NEAR testnet index of those assessments: sha256, transparency score, stage, and self-reported reserve fields. |
-| Upstream | [`ardmere/ardmere.github.io`](https://github.com/ardmere/ardmere.github.io) is the public CEX PoR assessment site. The assessments and stage methodology are developed there. This repo pins one commit as a submodule and anchors each assessment sha256 on NEAR. |
-| NEAR's role | Anyone can `view` the record with no account and no key. The chain names the assessment bytes. It does not prove reserves. |
+| Problem | A NEAR Intents solver hedges on a CEX. That custodial leg is the solver's own capital. Exchange PoR disclosures differ wildly; many are not third-party recomputable. |
+| Product | A NEAR testnet index of **ardmere assessments**: sha256, transparency score, stage, and self-reported reserve fields. |
+| Upstream | [`ardmere/ardmere.github.io`](https://github.com/ardmere/ardmere.github.io) is a **unified verification layer for exchange Proof-of-Reserves**: one stage methodology, public assessments, and verification where artifacts allow (e.g. OKX Stage 1). `UNVERIFIABLE` marks snapshots that cannot be recomputed. This repo pins one commit and anchors each **assessment** sha256 on NEAR. |
+| NEAR's role | Anyone can `view` the record with no account and no key. The chain freezes the assessment bytes (the verification outcome), not a raw exchange dump. It does not re-run proofs on-chain and does not prove reserve adequacy. |
 | Contract | [`por-digest-v7-index.ardmere-demo-1fc2.testnet`](https://explorer.testnet.near.org/accounts/por-digest-v7-index.ardmere-demo-1fc2.testnet) (schema v7) |
 | Do this | [Three steps](#try-it-in-three-steps) below. Single-file score is step 3. |
 | Agent | [Agent path](#agent-path-por-risk-control): one exchange or a batch. Not part of the three steps. |
@@ -79,7 +79,9 @@ POR_NEAR_CONTRACT=por-digest-v7-index.ardmere-demo-1fc2.testnet \
 
 ## What this gives NEAR
 
-Ardmere gives NEAR Intents solvers a framework and data to assess CEX custodial risk, and anchors each PoR snapshot on NEAR so verification rests on a consistent on-chain digest. In short, NEAR holds a **checkable index of how transparent each anchored CEX PoR snapshot is** — digest, transparency score, stage, and self-reported reserve fields from the assessment — for **on-chain protocol risk parameters** and for **agents** that touch CEX hedging or venue choice. That is **disclosure and custody-transparency input**, not proof of reserve adequacy.
+Upstream **ardmere** is a **unified verification layer for exchange Proof-of-Reserves**: one public methodology evaluates CEX disclosures across venues, **verifies what is publicly verifiable** (wallet lists, ownership proofs, zk bundles where published — e.g. OKX at Stage 1), and labels what is not (`UNVERIFIABLE` / Stage 0). This demo anchors each **assessment** on NEAR so solvers and agents read a consistent, permissionless record of that outcome.
+
+In short, NEAR holds a **checkable index of ardmere’s PoR verification results** — assessment digest, transparency score, stage, and self-reported reserve fields — for **on-chain protocol risk parameters** and for **agents** that touch CEX hedging or venue choice. That is **disclosure / verification-posture input**, not proof of reserve adequacy.
 
 A NEAR Intents solver is a principal, not a matcher. Its own terms of use put it plainly: the solver "provides and maintains its own Liquidity, at its own cost and under its own control" and "bears all market, inventory, hedging, network, execution, and settlement risk as principal" ([Solver Terms of Use](https://docs.near-intents.org/integration/market-makers/solver-terms-of-use), §7.1 and §7.4).
 
@@ -92,17 +94,17 @@ So the solver carries two exposures, and only one of them is on chain:
 | User ↔ solver | none: the swap settles atomically, or it refunds | no |
 | Solver ↔ exchange, when hedging | **custodial**: the solver's own capital sits at the venue | **yes** |
 
-The second one is why a reserve assessment has a reader here. A solver choosing where to hedge is choosing where to leave capital, and the 59 assessments vendored in this repo say what is currently checkable about those venues: 52 of 59 are Stage 0 with `UNVERIFIABLE`, meaning a third party cannot recompute the disclosure. That is a fact a solver can cite when picking a hedge venue — the same fact whether the reader is a solver, an agent, or a person.
+The second one is why a reserve assessment has a reader here. A solver choosing where to hedge is choosing where to leave capital. The 59 assessments vendored here are **ardmere verification outcomes** for those venues: 52 of 59 are Stage 0 with `UNVERIFIABLE` (third party cannot recompute), while OKX’s 7 snapshots reach Stage 1 because published artifacts were verified under the same framework. That split is a fact a solver can cite — whether the reader is a solver, an agent, or a person.
 
-Ardmere anchors the sha256 of each exchange-published snapshot on NEAR (`por-digest-v7-index.ardmere-demo-1fc2.testnet`, schema v7: digest, `custody_risk_score`, and self-reported USD / major-coin reserve fields from the assessment). Anyone verifying a hedge venue can hash the local assessment file and compare it to that on-chain digest — without calling the exchange's API.
+This repo anchors the sha256 of each **assessment file** on NEAR (`por-digest-v7-index.ardmere-demo-1fc2.testnet`, schema v7: digest, `custody_risk_score`, and self-reported USD / major-coin reserve fields). Anyone can hash the local assessment and compare it to that on-chain digest — without calling the exchange's API.
 
 What NEAR contributes to this, and what it does not:
 
 - **Contributes:** the record is readable with a `view` call, with no account, no key and no payment ([step 1](#try-it-in-three-steps) is exactly that). A hosted API can rate-limit, go down, or change its answer; a `view` call at a block height cannot.
 - **Contributes:** a named account such as `por-digest-v7-index.ardmere-demo-1fc2.testnet` is checkable by reading it, not by trusting a hex string.
-- **Contributes:** a **permissionless CEX PoR transparency layer** on NEAR. Each anchored snapshot exposes `custody_risk_score`, `por_stage`, digest roots, and (schema v7) self-reported USD totals and major-coin ratio bps via `get` / `get_latest`. On-chain protocols can plug those **view** results into risk policy (for example minimum stage, maximum transparency score, or hash match) before routing treasury, hedging, or counterparty exposure — without trusting an exchange API or a hosted scorer.
+- **Contributes:** a **permissionless on-chain index of that verification layer** on NEAR. Each anchored snapshot exposes `custody_risk_score`, `por_stage`, digest roots, and (schema v7) self-reported USD totals and major-coin ratio bps via `get` / `get_latest`. On-chain protocols can plug those **view** results into risk policy (for example minimum stage, maximum transparency score, or hash match) before routing treasury, hedging, or counterparty exposure — without trusting an exchange API or a hosted scorer.
 - **Contributes:** the same records plus the [`por-risk-control`](skills/por-risk-control/SKILL.md) skill give NEAR **AI agents** a deterministic read path (`por-check.sh` → JSON with `officialSources` and `selfReportedReserves`) for CEX venue checks, PoR Q&A, and pre-flight hedging workflows. That is **transparency-risk input**, not solvency proof and not trade permission.
-- **Does not contribute:** the record does not verify reserves and does not make any exchange's disclosure recomputable. It records how much is checkable.
+- **Does not contribute:** the NEAR contract does **not** re-verify exchange proofs and does **not** prove reserve adequacy. It freezes the assessment bytes. When upstream already verified (e.g. OKX Stage 1), the chain preserves that outcome; anchoring alone does not turn an `UNVERIFIABLE` disclosure into a recomputable one.
 
 | Reader on NEAR | Typical use | On-chain hook |
 | --- | --- | --- |
@@ -114,15 +116,15 @@ The chain is not what makes a solver safer. It is where the measurement about he
 
 ---
 
-Public Proof-of-Reserves from mainstream exchanges, in the assessments vendored here, is mostly not something a third party can recompute. At submodule commit pinned in `fixtures/digests.json` (currently `be220a5`) there are 59 snapshots across 19 exchanges: 52 are Stage 0 and carry `UNVERIFIABLE`. OKX is the only exchange at Stage 1 (7 snapshots), and every one of those still carries `NO_CANONICAL_ANCHOR`.
+At submodule commit pinned in `fixtures/digests.json` (currently `be220a5`) there are 59 assessments across 19 exchanges under one verification framework: 52 are Stage 0 with `UNVERIFIABLE`; OKX is the only exchange at Stage 1 (7 snapshots, still carrying `NO_CANONICAL_ANCHOR`). The majority finding is intentional output of the verification layer, not a claim that ardmere only hashes filings.
 
-NEAR stores the sha256 of each listed assessment. A view call returns the same 32 bytes, so the measurement can be re-hashed and re-queried. The contract does not verify reserves. Anchoring a digest does not make a disclosure verifiable, and it is not a record that exchange disclosure advanced.
+NEAR stores the sha256 of each listed **assessment**. A view call returns the same 32 bytes, so the verification outcome can be re-hashed and re-queried. The contract does not re-run exchange proofs or attest reserves.
 
-One contract stores the digest. One skill turns the public flags into a 0–100 score of how far a snapshot is from being recomputable. `./demo/run.sh` serves a local page with that score beside the file hash and the NEAR view. The judge path above does not need that page.
+One contract indexes those assessment digests. One skill turns the public flags into a 0–100 score of transparency / verification posture. `./demo/run.sh` serves a local page with that score beside the file hash and the NEAR view. The judge path above does not need that page.
 
 ## Baseline
 
-Assessment JSON comes from the **git submodule** [`vendor/ardmere.github.io`](https://github.com/ardmere/ardmere.github.io), pinned to the commit named by `fixtures/digests.json` (`sourceCommit`). `fixtures/digests.json` lists every `*-assessment.json` in that submodule, so every exchange the upstream repo has published can be scored and, once anchored, read back with `get` / `get_latest`. The upstream assessment registry stays in that repo. This repo is the NEAR slice plus the skill and dashboard.
+Assessment JSON comes from the **git submodule** [`vendor/ardmere.github.io`](https://github.com/ardmere/ardmere.github.io) — the unified PoR verification layer — pinned to the commit named by `fixtures/digests.json` (`sourceCommit`). `fixtures/digests.json` lists every `*-assessment.json` in that submodule, so every published assessment can be scored and, once anchored, read back with `get` / `get_latest`. Methodology and verification stay upstream; this repo is the NEAR index plus the skill and dashboard.
 
 Clone with submodules (same command as [step 2](#try-it-in-three-steps)):
 
