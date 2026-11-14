@@ -39,7 +39,7 @@ POR_NEAR_CONTRACT=por-digest-v7-index.ardmere-demo-1fc2.testnet \
   vendor/ardmere.github.io/docs/reports/okx/508756245-assessment.json
 ```
 
-Default live testnet contract: **`por-digest-v7-index.ardmere-demo-1fc2.testnet`** (schema **v7**, 57 snapshots at submodule commit pinned in `fixtures/digests.json`, currently `daff626`). Includes `custody_risk_score` plus self-reported USD totals and major-coin reserve ratio bps. `por-exchange-report.py` uses the same default when `--contract` is omitted.
+Default live testnet contract: **`por-digest-v7-index.ardmere-demo-1fc2.testnet`** (schema **v7**, 58 snapshots at submodule commit pinned in `fixtures/digests.json`, currently `7a86fc4`). Includes `custody_risk_score` plus self-reported USD totals and major-coin reserve ratio bps. `por-exchange-report.py` uses the same default when `--contract` is omitted.
 
 Equivalent one-liner without the script (same contract/method as README Step 1):
 

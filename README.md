@@ -56,7 +56,7 @@ POR_NEAR_CONTRACT=por-digest-v7-index.ardmere-demo-1fc2.testnet \
 
 Expected: `"riskScore": 10`, `"riskLevel": "low"`, `"near": {"live": true, "matches": true, ...}`. `live: true` means this run called the contract, not `fixtures/near-views.json`.
 
-Any other row in `fixtures/digests.json` works the same way. All 57 listed snapshots are on this contract.
+Any other row in `fixtures/digests.json` works the same way. All 58 listed snapshots are on this contract.
 
 ### What a judge cannot conclude
 
@@ -92,7 +92,7 @@ So the solver carries two exposures, and only one of them is on chain:
 | User ↔ solver | none: the swap settles atomically, or it refunds | no |
 | Solver ↔ exchange, when hedging | **custodial**: the solver's own capital sits at the venue | **yes** |
 
-The second one is why a reserve assessment has a reader here. A solver choosing where to hedge is choosing where to leave capital, and the 57 assessments vendored in this repo say what is currently checkable about those venues: 50 of 57 are Stage 0 with `UNVERIFIABLE`, meaning a third party cannot recompute the disclosure. That is a fact a solver can cite when picking a hedge venue — the same fact whether the reader is a solver, an agent, or a person.
+The second one is why a reserve assessment has a reader here. A solver choosing where to hedge is choosing where to leave capital, and the 58 assessments vendored in this repo say what is currently checkable about those venues: 51 of 58 are Stage 0 with `UNVERIFIABLE`, meaning a third party cannot recompute the disclosure. That is a fact a solver can cite when picking a hedge venue — the same fact whether the reader is a solver, an agent, or a person.
 
 Ardmere anchors the sha256 of each exchange-published snapshot on NEAR (`por-digest-v7-index.ardmere-demo-1fc2.testnet`, schema v7: digest, `custody_risk_score`, and self-reported USD / major-coin reserve fields from the assessment). Anyone verifying a hedge venue can hash the local assessment file and compare it to that on-chain digest — without calling the exchange's API.
 
@@ -114,7 +114,7 @@ The chain is not what makes a solver safer. It is where the measurement about he
 
 ---
 
-Public Proof-of-Reserves from mainstream exchanges, in the assessments vendored here, is mostly not something a third party can recompute. At submodule commit pinned in `fixtures/digests.json` (currently `daff626`) there are 57 snapshots across 19 exchanges: 50 are Stage 0 and carry `UNVERIFIABLE`. OKX is the only exchange at Stage 1 (7 snapshots), and every one of those still carries `NO_CANONICAL_ANCHOR`.
+Public Proof-of-Reserves from mainstream exchanges, in the assessments vendored here, is mostly not something a third party can recompute. At submodule commit pinned in `fixtures/digests.json` (currently `7a86fc4`) there are 58 snapshots across 19 exchanges: 51 are Stage 0 and carry `UNVERIFIABLE`. OKX is the only exchange at Stage 1 (7 snapshots), and every one of those still carries `NO_CANONICAL_ANCHOR`.
 
 NEAR stores the sha256 of each listed assessment. A view call returns the same 32 bytes, so the measurement can be re-hashed and re-queried. The contract does not verify reserves. Anchoring a digest does not make a disclosure verifiable, and it is not a record that exchange disclosure advanced.
 
@@ -146,7 +146,7 @@ Changes made in this repo after the import:
 - `skills/por-risk-control/scripts/inclusion_check.py` and `tests/` — local verification of a user's own inclusion proof.
 - `contracts/por_digest_anchor` — `point_latest`, and the tests that pin `get_latest` behaviour.
 - `.github/workflows/` — the two pipelines.
-- The manifest now covers every assessment the submodule pins (57 across 19 exchanges), and all of them are anchored on testnet.
+- The manifest now covers every assessment the submodule pins (58 across 19 exchanges), and all of them are anchored on testnet.
 
 No third-party libraries are vendored into `src`. The contract depends on `near-sdk` from crates.io, and the Python tests use only the standard library.
 
@@ -188,7 +188,7 @@ Three separate roles. Nothing here writes to mainnet.
 
 `scripts/upstream_check.py` only reads the submodule and the manifest. `scripts/near_digest.py` skips a snapshot already on chain with the same bytes. When the assessment bytes for the same `snapshot_id` change, `reconcile --refresh --apply` updates that record. Without `--refresh`, a byte mismatch is reported and left in place. Neither command is a timer; the trigger is a manifest change, not a clock.
 
-**Live contract (schema v7):** **`por-digest-v7-index.ardmere-demo-1fc2.testnet`** — 57 snapshots anchored from the submodule commit in `fixtures/digests.json` (`sourceCommit`, currently `daff626`). `SnapshotRecord` includes `custody_risk_score` (**0–100**, **255** = inconclusive), `total_liability_usd` / `total_reserve_usd` (`u128`, `0` = unavailable), and `btc` / `eth` / `usdt` / `usdc` `_reserve_ratio_bps` (`u16`, `10000` = 100%, `65535` = unavailable), aligned with Sepolia v7. Set `POR_NEAR_CONTRACT` and `vars.NEAR_CONTRACT_ID` (CI) to this account. `scripts/por_snapshot.py` packs reserve fields from assessment JSON.
+**Live contract (schema v7):** **`por-digest-v7-index.ardmere-demo-1fc2.testnet`** — 58 snapshots from the submodule commit in `fixtures/digests.json` (`sourceCommit`, currently `7a86fc4`). `SnapshotRecord` includes `custody_risk_score` (**0–100**, **255** = inconclusive), `total_liability_usd` / `total_reserve_usd` (`u128`, `0` = unavailable), and `btc` / `eth` / `usdt` / `usdc` `_reserve_ratio_bps` (`u16`, `10000` = 100%, `65535` = unavailable), aligned with Sepolia v7. Set `POR_NEAR_CONTRACT` and `vars.NEAR_CONTRACT_ID` (CI) to this account. `scripts/por_snapshot.py` packs reserve fields from assessment JSON.
 
 **Legacy testnet accounts (read-only history):** **`por-digest-v5-index.ardmere-demo-1fc2.testnet`** (schema v5, old assessment sha256 — `near.matches` false vs current files). **`por-digest-v4-index.ardmere-demo-1fc2.testnet`** (schema v4, no on-chain custody score). Do **not** upgrade WASM in-place across schema versions; use a **new** subaccount, `new()`, then `reconcile --apply`.
 
