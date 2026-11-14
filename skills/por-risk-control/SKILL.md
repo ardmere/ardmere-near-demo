@@ -1,6 +1,6 @@
 ---
 name: por-risk-control
-description: Score CEX custody risk from a public Proof-of-Reserves assessment, its sha256, and a NEAR digest view. Use when a user asks for an exchange's latest PoR snapshot time, a multi-month PoR summary, or a 0–100 custody risk score before choosing a CEX hedge venue. For user-facing answers, follow references/response-framework.md (single snapshot, one exchange, or batch with one merged overview table). Does not place orders, hold keys, call NEAR Intents, or decide the trade.
+description: Score CEX custody risk from a public Proof-of-Reserves assessment, its sha256, and a NEAR digest view. Use when a user asks for an exchange's latest PoR snapshot time, a multi-month PoR summary, or a 0–100 custody risk score before choosing a CEX hedge venue. Gives NEAR agents a deterministic CEX PoR transparency read (on-chain digest + score) for venue pre-checks, including NEAR Intents–style CEX hedge checks. For user-facing answers, follow references/response-framework.md (single snapshot, one exchange, or batch with one merged overview table). Does not place orders, hold keys, call NEAR Intents, or decide the trade.
 ---
 
 # PoR risk control
@@ -8,6 +8,16 @@ description: Score CEX custody risk from a public Proof-of-Reserves assessment, 
 This skill scores **PoR transparency risk** (same table as **ardmere.github.io** `por-custody-risk`). **Higher `riskScore` = worse public disclosure posture**, not reserve adequacy or “exchange safety.” It does not decide whether to trade.
 
 Run the script and read the JSON. Use `scoreSemantics`, `riskScore`, `riskLevel`, `conclusive`, and `factors`. There is no `decision` field. Do not invent allow, reduce, or block. When speaking to humans, say **transparency risk (higher = worse)**.
+
+## Value for NEAR
+
+NEAR holds a **permissionless CEX PoR transparency index** — digest, `custody_risk_score`, `por_stage`, and schema-v7 self-reported reserve fields — on `por-digest-v7-index.ardmere-demo-1fc2.testnet`, readable with a public `view` (no key, no payment).
+
+**NEAR Intents:** solvers act as principals and often **hedge inventory on CEXs**, which creates **custodial risk** on the solver↔exchange leg (the user↔solver swap itself is atomic). This skill supplies **transparency-risk input** for that hedge-venue check — the same measurement a solver, protocol, or person can cite — without calling Intents or placing trades.
+
+**This skill** is the **agent read path** for that index: hash the vendored assessment, `view` the contract, return JSON (`riskScore`, `near.matches`, `officialSources`, `selfReportedReserves`) for venue pre-checks and PoR Q&A. On-chain protocols can plug the same `get` / `get_latest` fields into risk policy without this skill.
+
+Disclosure / transparency only — **not** reserve adequacy, **not** trade permission. Longer framing: repo [`README.md`](../../README.md) → *What this gives NEAR*.
 
 ## Dependencies (read path)
 
@@ -29,7 +39,7 @@ POR_NEAR_CONTRACT=por-digest-v7-index.ardmere-demo-1fc2.testnet \
   vendor/ardmere.github.io/docs/reports/okx/508756245-assessment.json
 ```
 
-Default live testnet contract: **`por-digest-v7-index.ardmere-demo-1fc2.testnet`** (schema **v7**, 57 snapshots at submodule `640123e`). Includes `custody_risk_score` plus self-reported USD totals and major-coin reserve ratio bps. `por-exchange-report.py` uses the same default when `--contract` is omitted.
+Default live testnet contract: **`por-digest-v7-index.ardmere-demo-1fc2.testnet`** (schema **v7**, 57 snapshots at submodule commit pinned in `fixtures/digests.json`, currently `daff626`). Includes `custody_risk_score` plus self-reported USD totals and major-coin reserve ratio bps. `por-exchange-report.py` uses the same default when `--contract` is omitted.
 
 Equivalent one-liner without the script (same contract/method as README Step 1):
 
@@ -104,7 +114,7 @@ Every successful `por-check` includes **`selfReportedReserves`**:
 
 When presenting PoR evaluations, **always show** total liability, total reserve, total reserve ratio, and the four major coin ratio rows (from `selfReportedReserves`), then transparency risk. Say clearly these are **self-reported**, not ardmere-verified solvency. For any missing self-reported field in **tables shown to users**, write **`Unavailable`** (aligned with upstream transparency reports). Layout: [`references/presentation-format.md`](references/presentation-format.md). Script formatting: `scripts/reserve_display.py` (used by `por-exchange-report.py`).
 
-**Legacy:** `por-digest-v5-index.ardmere-demo-1fc2.testnet` still holds pre-`640123e` digests; `near.matches` is **false** against current assessment files. Use v7-index for live checks.
+**Legacy:** `por-digest-v5-index.ardmere-demo-1fc2.testnet` still holds pre-v7 digests; `near.matches` is **false** against current assessment files. Use v7-index for live checks.
 
 With `POR_NEAR_CONTRACT` unset, the script falls back to the sandbox recording in `fixtures/near-views.json`. That recording is a replay, not chain state; say so if you quote a score from it.
 
