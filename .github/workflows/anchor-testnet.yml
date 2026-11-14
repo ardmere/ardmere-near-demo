@@ -48,7 +48,8 @@ jobs:
           cargo install near-cli-rs --locked
 
       - name: Read the digest with a view call only
-        run: python3 scripts/near_digest.py --network testnet --contract "${NEAR_CONTRACT_ID}" reconcile
+        # --refresh: same snapshot_id with new assessment bytes (e.g. publicPoRApi backfill) must update in place
+        run: python3 scripts/near_digest.py --network testnet --contract "${NEAR_CONTRACT_ID}" reconcile --refresh
 
       - name: Write the owner key to a temporary keychain
         env:
@@ -73,7 +74,7 @@ jobs:
       - name: Reconcile the manifest with testnet
         run: |
           HOME="${KEYCHAIN}" XDG_CONFIG_HOME="${KEYCHAIN}/.config" \
-            python3 scripts/near_digest.py --network testnet --contract "${NEAR_CONTRACT_ID}" reconcile --apply
+            python3 scripts/near_digest.py --network testnet --contract "${NEAR_CONTRACT_ID}" reconcile --refresh --apply
 
       - name: Shred the key
         if: always()

@@ -33,14 +33,16 @@ When the file matches the chain digest but **`custody_risk_score` on NEAR differ
 
 Same integers as [upstream decision-table](https://github.com/ardmere/ardmere.github.io/blob/main/skills/por-custody-risk/references/decision-table.md): blocking +40; stage +35; derived list +16; non-blocking cap 20.
 
+Non-blocking flags include **`NO_PUBLIC_POR_API` (+5)** when `publicPoRApi` is null (no documented permissionless PoR HTTP API).
+
 ## Reference scores (file-only, main-site scorer)
 
 | File | Score | Level |
 | --- | --- | --- |
-| OKX `508756245` | 10 | `low` |
-| KuCoin `20261031` | 99 | `critical` |
-| Bybit `2026102706` | 99 | `critical` |
-| Bitget `20261021` | 99 | `critical` |
+| OKX `508756245` | 15 | `low` |
+| KuCoin `20261031` | 100 | `critical` |
+| Bybit `2026102706` | 100 | `critical` |
+| Bitget `20261021` | 100 | `critical` |
 | Binance `PR04NOV26` | 91 | `critical` |
 
 Do not treat the number as “exchange safety”; read `factors[]` and `officialSources`.

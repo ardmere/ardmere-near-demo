@@ -90,6 +90,8 @@ def print_markdown_report(payload: dict, period_label: str) -> None:
     print("| --- | --- |")
     if src.get("exchangePorPage"):
         print(f"| Exchange PoR page | {src['exchangePorPage']} |")
+    api = src.get("publicPoRApi")
+    print(f"| Public PoR API | {api if api else 'Unavailable'} |")
     for art in src.get("publicArtifacts") or []:
         print(f"| {art.get('kind', 'artifact')} | {art.get('url', '—')} |")
     for repo in src.get("upstreamVerifierRepos") or [][:3]:
@@ -265,6 +267,8 @@ def main() -> int:
     src = payload["latest"].get("officialSources") or {}
     if src.get("exchangePorPage"):
         print(f"  por page: {src['exchangePorPage']}")
+    api = src.get("publicPoRApi")
+    print(f"  public PoR API: {api if api else 'Unavailable'}")
     print()
     print(f"{period_label}:")
     for row in scored:
