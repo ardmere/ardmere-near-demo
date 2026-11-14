@@ -10,6 +10,7 @@ Pair with [`presentation-format.md`](presentation-format.md) for cell formatting
 2. Live reads: `POR_NEAR_CONTRACT=por-digest-v7-index.ardmere-demo-1fc2.testnet` (and `por-exchange-report.py` inherits this default).
 3. If `near.live` is not `true`, state that the NEAR block is a **sandbox replay**, not testnet.
 4. Cite at least **exchange PoR page** + one **`publicArtifacts`** URL per exchange (from `officialSources`).
+5. If the user asks **why this matters on NEAR**, for **agents**, or vs **NEAR Intents**, summarize [`SKILL.md`](../SKILL.md) → *Value for NEAR* (solver hedge custodial leg; transparency input only). Do **not** expand that essay into every PoR table reply.
 
 ## Route the request
 
@@ -110,6 +111,7 @@ End with **Disclaimer**.
 - [ ] Missing reserve fields shown as **Unavailable**.
 - [ ] Official PoR page + artifact cited per exchange.
 - [ ] No `decision`; no multi-paragraph methodology unless the user asked.
+- [ ] NEAR / Intents value prose only when the user asked (see Prerequisites §5).
 
 ## Forbidden
 
