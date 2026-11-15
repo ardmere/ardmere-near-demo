@@ -11,13 +11,13 @@ Run the script and read the JSON. Use `scoreSemantics`, `riskScore`, `riskLevel`
 
 ## Value for NEAR
 
-NEAR holds a **permissionless CEX PoR transparency index** — digest, `custody_risk_score`, `por_stage`, and schema-v7 self-reported reserve fields — on `por-digest-v7-index.ardmere-demo-1fc2.testnet`, readable with a public `view` (no key, no payment).
+Upstream **ardmere** is a **unified verification layer for exchange Proof-of-Reserves** (one methodology; verify when artifacts allow; `UNVERIFIABLE` when not). NEAR holds a **permissionless index of those assessment outcomes** — digest, `custody_risk_score`, `por_stage`, and schema-v7 self-reported reserve fields — on `por-digest-v7-index.ardmere-demo-1fc2.testnet`, readable with a public `view` (no key, no payment). The contract does not re-run exchange proofs.
 
 **NEAR Intents:** solvers act as principals and often **hedge inventory on CEXs**, which creates **custodial risk** on the solver↔exchange leg (the user↔solver swap itself is atomic). This skill supplies **transparency-risk input** for that hedge-venue check — the same measurement a solver, protocol, or person can cite — without calling Intents or placing trades.
 
 **This skill** is the **agent read path** for that index: hash the vendored assessment, `view` the contract, return JSON (`riskScore`, `near.matches`, `officialSources`, `selfReportedReserves`) for venue pre-checks and PoR Q&A. On-chain protocols can plug the same `get` / `get_latest` fields into risk policy without this skill.
 
-Disclosure / transparency only — **not** reserve adequacy, **not** trade permission. Longer framing: repo [`README.md`](../../README.md) → *What this gives NEAR*.
+Disclosure / verification-posture input only — **not** reserve adequacy, **not** trade permission. Longer framing: repo [`README.md`](../../README.md) → *What this gives NEAR*.
 
 ## Dependencies (read path)
 
